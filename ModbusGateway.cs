@@ -18,8 +18,8 @@ namespace ConsoleApp9
         private readonly Dictionary<byte, ModbusSlaveDevice> _slaveDevices; //klucz - adres urządzenia, wartość - obiekt slave
         private bool _isRunning; //czy gateway jest aktualnie uruchomiony
         private readonly object _syncLock = new object();
-        private readonly Configuration _config;
-        private IOperationModeHandler operationModeHandler;
+        public readonly Configuration _config;
+        public IOperationModeHandler operationModeHandler;
 
         public ModbusGateway(string instanceName)
         {
@@ -119,6 +119,8 @@ namespace ConsoleApp9
             _tcpServer.CoilsChanged += HandleCoilsChanged;
             _tcpServer.HoldingRegistersChanged += HandleHoldingRegistersChanged;
             _tcpServer.NumberOfConnectedClientsChanged += HandleClientConnectionChanged;
+
+            _tcpServer.OperationModeHandler = operationModeHandler;
 
         }
 

@@ -285,6 +285,8 @@ namespace EasyModbus
     /// </summary>
     public class ModbusServer
     {
+        public IOperationModeHandler OperationModeHandler { get; set; }
+
         private bool debug = false;
         Int32 port = 502;
         ModbusProtocol receiveData;
@@ -698,10 +700,26 @@ namespace EasyModbus
             }
         }
         #endregion
-         
+       
         #region Method CreateAnswer
         private void CreateAnswer(ModbusProtocol receiveData, ModbusProtocol sendData, NetworkStream stream, int portIn, IPAddress ipAddressIn)
         {
+            if(OperationModeHandler is ManualModeHandler)
+            {
+                //dla trybu manual jeśli rejestr nie jest zdefiniowany
+                if (!IsRegisterDefined(receiveData))
+                {
+                    // odpowiedź exception:
+                    sendData.errorCode = (byte)(receiveData.functionCode | 0x80);
+                    sendData.exceptionCode = 0x02; // Illegal Data Address
+                    sendData.length = 0x03; // typowo: UnitIdentifier, errorCode, exceptionCode
+
+                    sendException(sendData.errorCode, sendData.exceptionCode, receiveData, sendData, stream, portIn, ipAddressIn);
+                    return;
+                }
+            }
+                      
+            
 
             switch (receiveData.functionCode)
             {
@@ -820,8 +838,121 @@ namespace EasyModbus
             }
             sendData.timeStamp = DateTime.Now;
         }
+        
+        private bool IsRegisterDefined(ModbusProtocol receiveData)
+        {
+            var rm = RegisterManager.Instance;
+            // Dla funkcji obsługujących rejestry holding: 3 (odczyt)
+
+            if (receiveData.functionCode == 3)
+            {
+                for (ushort i = 0; i < receiveData.quantity; i++)
+                {
+                    ushort currentAddress = (ushort)(receiveData.startingAdress + i);
+                    var register = rm.HoldingRegisters.FirstOrDefault(
+                        r => r.SlaveId == receiveData.unitIdentifier &&
+                             currentAddress >= r.StartAddress &&
+                             currentAddress < r.StartAddress + r.Quantity &&
+                             r.IsActive);
+
+                    if (register == null)
+                    {
+                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress}  dla slave {receiveData.unitIdentifier}.");
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+
+
+            // holding registers : 6 (zapis pojedynczego rejestru) oraz 16 (zapis wielu rejestrów)
+            if (receiveData.functionCode == 6 || receiveData.functionCode == 16)
+            {
+                for (ushort i = 0; i < receiveData.quantity; i++)
+                {
+                    ushort currentAddress = (ushort)(receiveData.startingAdress + i);
+                    var register = rm.HoldingRegisters.FirstOrDefault(
+                        r => r.SlaveId == receiveData.unitIdentifier &&
+                             currentAddress >= r.StartAddress &&
+                             currentAddress < r.StartAddress + r.Quantity &&
+                             r.AccessMode == "W" &&
+                             r.IsActive);
+
+                    if (register == null)
+                    {
+                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} z uprawnieniami W dla slave {receiveData.unitIdentifier}.");
+                        return false;
+                    }
+                }
+                return true;
+            }
+            // Dla rejestrów input – funkcja 4 (odczyt)
+            else if (receiveData.functionCode == 4)
+            {
+                for (ushort i = 0; i < receiveData.quantity; i++)
+                {
+                    ushort currentAddress = (ushort)(receiveData.startingAdress + i);
+                    var register = rm.InputRegisters.FirstOrDefault(
+                        r => r.SlaveId == receiveData.unitIdentifier &&
+                             currentAddress >= r.StartAddress &&
+                             currentAddress < r.StartAddress + r.Quantity &&
+                             r.IsActive);
+
+                    if (register == null)
+                    {
+                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} dla slave {receiveData.unitIdentifier}.");
+                        return false;
+                    }
+                }
+                return true;
+            }
+            //odczyt cewek
+            else if (receiveData.functionCode == 1)
+            {
+                for (ushort i = 0; i < receiveData.quantity; i++)
+                {
+                    ushort currentAddress = (ushort)(receiveData.startingAdress + i);
+                    var register = rm.Coils.FirstOrDefault(
+                        r => r.SlaveId == receiveData.unitIdentifier &&
+                             currentAddress >= r.StartAddress &&
+                             currentAddress < r.StartAddress + r.Quantity &&
+                             r.IsActive);
+
+                    if (register == null)
+                    {
+                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} dla slave {receiveData.unitIdentifier}.");
+                        return false;
+                    }
+                }
+                return true;
+            }
+            //zapis cewek
+            else if(receiveData.functionCode==5 || receiveData.functionCode == 15)
+            {
+                for (ushort i = 0; i < receiveData.quantity; i++)
+                {
+                    ushort currentAddress = (ushort)(receiveData.startingAdress + i);
+                    var register = rm.Coils.FirstOrDefault(
+                        r => r.SlaveId == receiveData.unitIdentifier &&
+                             currentAddress >= r.StartAddress &&
+                             currentAddress < r.StartAddress + r.Quantity &&
+                             r.AccessMode == "W" &&
+                             r.IsActive);
+
+                    if (register == null)
+                    {
+                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} z uprawnieniami W dla slave {receiveData.unitIdentifier}.");
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false; //dla niezdefiniowanych funkcji
+            
+        }
         #endregion
-         
+
         private void ReadCoils(ModbusProtocol receiveData, ModbusProtocol sendData, NetworkStream stream, int portIn, IPAddress ipAddressIn)
         {
             sendData.response = true;

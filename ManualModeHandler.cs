@@ -18,7 +18,7 @@ namespace ConsoleApp9
         private bool inputNotFoundMessagePrinted = false;
         private bool coilNotFoundMessagePrinted = false;
 
-        SlaveException exception = new SlaveException();
+      
         public ManualModeHandler()
         {
             registerManager = RegisterManager.Instance;
