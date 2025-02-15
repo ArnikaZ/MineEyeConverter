@@ -288,7 +288,7 @@ namespace EasyModbus
         private bool debug = false;
         Int32 port = 502;
         ModbusProtocol receiveData;
-        ModbusProtocol sendData =  new ModbusProtocol();
+        public ModbusProtocol sendData =  new ModbusProtocol();
         Byte[] bytes = new Byte[2100];
         //public Int16[] _holdingRegisters = new Int16[65535];
         public HoldingRegisters holdingRegisters;      
@@ -307,11 +307,13 @@ namespace EasyModbus
         private byte unitIdentifier;
         private ushort _lastStartingAddress;
         private ushort _lastQuantity;
+        private int _functionCode;
 
         public byte UnitIdentifierValue => unitIdentifier;
         public byte CurrentUnitIdentifier { get; set; }
         public ushort LastStartingAddress => _lastStartingAddress;
         public ushort LastQuantity => _lastQuantity;
+        public int FunctionCode => _functionCode;
 
 
 
@@ -579,6 +581,7 @@ namespace EasyModbus
 
                     // Lese function code
                     receiveDataThread.functionCode = bytes[7 - 6 * Convert.ToInt32(serialFlag)];
+                    _functionCode = receiveDataThread.functionCode;
 
                     // Lese starting address 
                     byteData[1] = bytes[8 - 6 * Convert.ToInt32(serialFlag)];
@@ -1953,7 +1956,7 @@ namespace EasyModbus
             }
         }
 
-        private void sendException(int errorCode, int exceptionCode, ModbusProtocol receiveData, ModbusProtocol sendData, NetworkStream stream, int portIn, IPAddress ipAddressIn)
+        public void sendException(int errorCode, int exceptionCode, ModbusProtocol receiveData, ModbusProtocol sendData, NetworkStream stream, int portIn, IPAddress ipAddressIn)
         {
             sendData.response = true;
 

@@ -33,6 +33,7 @@ namespace ConsoleApp9
         private TcpProvider _tcpProvider;
         private SerialProvider _serialProvider;
         private bool isConnected;
+        private IOperationModeHandler operationModeHandler;
 
         public virtual IProvider DataProvider
         {
@@ -77,11 +78,12 @@ namespace ConsoleApp9
             StartingAddress = startingAddress;
             Quantity = quantity;
         }
-        public ClientHandler()
+        public ClientHandler(IOperationModeHandler operationMode)
         {
             SlaveList = new List<ModbusSlaveDevice>();
             factory = new ModbusFactory();
             Communicate = true;
+            operationModeHandler = operationMode;
         }
 
         
@@ -149,26 +151,15 @@ namespace ConsoleApp9
                     {
                         try
                         {
-                            
-                        var slave = SlaveList.FirstOrDefault(s => s.UnitId == UnitIdentifier);
-                        if(slave!=null)
+                            var slave = SlaveList.FirstOrDefault(s => s.UnitId == UnitIdentifier);
+                            if (slave != null)
                                 try
                                 {
                                     try
                                     {
-                                        //start address musi się pokrywać z address w modbus slave
-                                        // maxHoldingRegisters nie może być większe niż length w modbus slave
-                                        // Czytanie po 125 rejestrów na raz (ograniczenie protokołu Modbus)
-                                        for (ushort startAddress = StartingAddress; startAddress < Quantity; startAddress +=125)
-                                        {
-                                            
-                                            // Obliczenie ile rejestrów zostało do końca
-                                            ushort registersToRead = (ushort)Math.Min(125, Quantity - startAddress);
+                                        operationModeHandler.ReadHoldingRegisters(slave, master, StartingAddress, Quantity);
 
-                                            var holdingData = master.ReadHoldingRegisters(slave.UnitId, startAddress, registersToRead);
-                                            // Kopiowanie odczytane dane do tablicy
-                                            Array.Copy(holdingData, 0, slave.HoldingRegisters, startAddress, registersToRead);
-                                        }
+                                        
                                     }
                                     catch (Exception ex)
                                     {
@@ -177,13 +168,8 @@ namespace ConsoleApp9
 
                                     try
                                     {
-                                        for (ushort startAddress = StartingAddress; startAddress < Quantity; startAddress += 125)
-                                        {
-                                            ushort registersToRead = (ushort)Math.Min(125, Quantity - startAddress);
-
-                                            var inputData = master.ReadInputRegisters(slave.UnitId, startAddress, registersToRead);
-                                            Array.Copy(inputData, 0, slave.InputRegisters, startAddress, registersToRead);
-                                        }
+                                        operationModeHandler.ReadInputRegisters(slave, master, StartingAddress, Quantity);
+                                        
                                     }
                                     catch (Exception ex)
                                     {
@@ -192,13 +178,8 @@ namespace ConsoleApp9
 
                                     try
                                     {
-                                        for (ushort startAddress = StartingAddress; startAddress < Quantity; startAddress += 125)
-                                        {
-                                            ushort coilsToRead = (ushort)Math.Min(125, Quantity - startAddress);
-
-                                            var coilsData = master.ReadCoils(slave.UnitId, startAddress, coilsToRead);
-                                            Array.Copy(coilsData, 0, slave.Coils, startAddress, coilsToRead);
-                                        }
+                                        operationModeHandler.ReadCoils(slave, master, StartingAddress, Quantity);
+                                        
 
                                     }
                                     catch (Exception ex)
@@ -216,6 +197,7 @@ namespace ConsoleApp9
                                     isConnected = false;
                                     break;
                                 }
+
 
                             // Przerwa między pełnymi cyklami odczytu
                             Task.Delay(250).Wait();
@@ -288,7 +270,12 @@ namespace ConsoleApp9
 
                 if (isConnected)
                 {
-                    master?.WriteSingleRegister(address, startRegister, value);
+                    if(master!=null)
+                    {
+                        operationModeHandler.WriteSingleRegister(master, address, startRegister, value);
+                    }
+                   
+                   // master?.WriteSingleRegister(address, startRegister, value);
                     return true;
                 }
                 return false;
@@ -348,8 +335,13 @@ namespace ConsoleApp9
 
                 if (isConnected)
                 {
-                    master?.WriteMultipleRegisters(address, startAddress, values);
-                    return true;
+                    if (master != null)
+                    {
+                        operationModeHandler.WriteMultipleRegisters(master, address, startAddress, values);
+                        return true;
+                    }
+                    //master?.WriteMultipleRegisters(address, startAddress, values);
+                    
                 }
                 return false;
             }
@@ -408,8 +400,12 @@ namespace ConsoleApp9
 
                 if (isConnected)
                 {
-                    master?.WriteSingleCoil(address, coilAddress, value);
-                    return true;
+                    if (master != null)
+                    {
+                        operationModeHandler.WriteSingleCoil(master, address, coilAddress, value);
+                        return true;
+                    }
+                    
                 }
                 return false;
             }
@@ -468,8 +464,12 @@ namespace ConsoleApp9
 
                 if (isConnected)
                 {
-                    master?.WriteMultipleCoils(address, startAddress, values);
-                    return true;
+                    if (master != null)
+                    {
+                        operationModeHandler.WriteMultipleCoils(master, address, startAddress, values);
+                        return true;
+                    }
+                    
                 }
                 return false;
             }

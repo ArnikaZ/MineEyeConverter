@@ -2,7 +2,7 @@
 <Configuration>
 	<Instances>
 		<Instance name="Szyb1Poziom950Przenosnik2">
-			<OperationMode>Auto</OperationMode>
+			<OperationMode>Manual</OperationMode>
 			<ListeningPort>503</ListeningPort>
 			<ConnectionType>RtuOverTcp</ConnectionType>
 			<RtuSettings>

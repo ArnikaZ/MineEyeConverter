@@ -6,11 +6,8 @@ namespace ConsoleApp9
     {
         static void Main(string[] args)
         {
-            var bridge = new ModbusGateway("Szyb1Poziom950Przenosnik2");
-
             
-
-            // Uruchom bridge
+            var bridge = new ModbusGateway("Szyb1Poziom950Przenosnik2");
             bridge.Start();
             
             Console.WriteLine("Naciśnij dowolny klawisz, aby zakończyć...");

@@ -19,7 +19,7 @@ namespace ConsoleApp9
         private bool _isRunning; //czy gateway jest aktualnie uruchomiony
         private readonly object _syncLock = new object();
         private readonly Configuration _config;
-       
+        private IOperationModeHandler operationModeHandler;
 
         public ModbusGateway(string instanceName)
         {
@@ -36,12 +36,34 @@ namespace ConsoleApp9
             ClientWhiteList whiteList = instanceConfig.ClientWhiteList;
             _slaveDevices = new Dictionary<byte, ModbusSlaveDevice>();
 
+            // Odczyt trybu pracy z konfiguracji
+            string operationMode = instanceConfig.OperationMode;
+            
+
+            // Wybór handlera trybu na podstawie konfiguracji
+            switch (operationMode.ToLower())
+            {
+                case "auto":
+                    operationModeHandler = new AutoModeHandler();
+                    break;
+                //case "learning":
+                //    operationModeHandler = new LearningModeHandler();
+                //    break;
+                case "manual":
+                    operationModeHandler = new ManualModeHandler();
+                    break;
+                default:
+                    Console.WriteLine("Nieznany tryb pracy: " + operationMode);
+                    break;
+            }
+
 
             // Konfiguracja klienta RTU
             if (connectionType.Equals("COM", StringComparison.OrdinalIgnoreCase))
             {
-                _rtuClient = new ClientHandler
+                _rtuClient = new ClientHandler(operationModeHandler)
                 {
+                    
                     SerialDataProvider = new SerialProvider
                     {
                         SerialName = rtuSettings.PortName,
@@ -54,7 +76,7 @@ namespace ConsoleApp9
             }
             else if (connectionType.Equals("RtuOverTcp", StringComparison.OrdinalIgnoreCase))
             {
-                _rtuClient = new ClientHandler
+                _rtuClient = new ClientHandler(operationModeHandler)
                 {
                     TcpDataProvider = new TcpProvider
                     {
@@ -84,9 +106,7 @@ namespace ConsoleApp9
                 Console.WriteLine($"{slave.Key}: {slave.Value.ToString}");
             }
 
-           
-            
-
+      
 
             // Konfiguracja serwera TCP
             _tcpServer = new ModbusServer
@@ -161,7 +181,7 @@ namespace ConsoleApp9
             _rtuClient.Stop();
             _log.Info("Zatrzymano bridge TCP/RTU");
         }
-        //Metoda jest wywoływana gdy zmienią się stany cewek w serwerze TCP
+        //Metoda jest wywoływana gdy zmienią się stany cewek w ModbusPoll
         //coil: adres pierwszej zmienionej cewki
         //numberOfPoints: liczba kolejnych cewek, które uległy zmianie
         private void HandleCoilsChanged(byte slaveId, int coil, int numberOfPoints)
@@ -170,22 +190,9 @@ namespace ConsoleApp9
             {
                 lock (_syncLock)
                 {
-                    
-                    // Pobierz dane z serwera TCP
-                    bool[] values = new bool[numberOfPoints];
-                    for (int i = 0; i < numberOfPoints; i++)
-                    {
-                        values[i] = _tcpServer.coils[coil];
-                    }
 
-                   
-                    if (_slaveDevices.ContainsKey(slaveId))
-                    {
-                        // Zapisz do urządzenia RTU
-                        _rtuClient.WriteMultipleCoils(slaveId, (ushort)(coil - 1), values);
-                        _log.Debug($"Przesłano zmianę coils do urządzenia {slaveId}, adres początkowy: {coil}, liczba punktów: {numberOfPoints}");
-                        Console.WriteLine($"Przesłano zmianę coils do urządzenia {slaveId}, adres początkowy: {coil}, liczba punktów: {numberOfPoints}");
-                    }
+                    operationModeHandler.HandleCoilsChanged(slaveId, coil, numberOfPoints, _tcpServer, _rtuClient, _slaveDevices);
+
                 }
 
             }
@@ -202,20 +209,9 @@ namespace ConsoleApp9
             {
                 lock (_syncLock)
                 {
-                    // Pobierz dane z serwera TCP
-                    ushort[] values = new ushort[numberOfPoints];
-                    for (int i = 0; i < numberOfPoints; i++)
-                    {
-                        values[i] = (ushort)_tcpServer.holdingRegisters[register];
-                    }
-
-                    if (_slaveDevices.ContainsKey(slaveId))
-                    {
-                        // Zapisz do urządzenia RTU
-                        _rtuClient.WriteMultipleRegisters(slaveId, (ushort)(register - 1), values);
-                        _log.Debug($"Przesłano zmianę rejestrów do urządzenia {slaveId}, adres początkowy: {register}, liczba rejestrów: {numberOfPoints}");
-                        Console.WriteLine($"Przesłano zmianę rejestrów do urządzenia {slaveId}, adres początkowy: {register}, liczba rejestrów: {numberOfPoints}");
-                    }
+                    operationModeHandler.HandleHoldingRegistersChanged(slaveId, register, numberOfPoints, _tcpServer, _rtuClient, _slaveDevices);
+                    
+                   
                 }
 
             }
@@ -229,7 +225,7 @@ namespace ConsoleApp9
         private void HandleClientConnectionChanged()
         {
             _log.Info($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {_tcpServer.NumberOfConnections}");
-            Console.WriteLine($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {_tcpServer.NumberOfConnections}");
+            //Console.WriteLine($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {_tcpServer.NumberOfConnections}");
         }
 
         
@@ -245,61 +241,19 @@ namespace ConsoleApp9
 
                     if (_slaveDevices.TryGetValue(_tcpServer.CurrentUnitIdentifier, out ModbusSlaveDevice slave))
                     {
+                        
                         try
                         {
+                            operationModeHandler.Synchronize(slave, _tcpServer);
 
-                            // Sprawdzenie długości tablic przed synchronizacją
-                            if (slave.Coils == null || slave.Coils.Length == 0)
-                            {
-                                Console.WriteLine($"Błąd: Slave {slave.UnitId} - brak cewek (Coils).");
-                            }
-                            else
-                            {
-                                for (ushort i = 0; i < slave.Coils.Length && i + 1 < _tcpServer.coils.localArray.Length; i++)
-                                {
-                                    lock (_syncLock)
-                                    {
-                                        _tcpServer.coils[i + 1] = slave.Coils[i];
-                                    }
-                                }
-                            }
-
-                            if (slave.HoldingRegisters == null || slave.HoldingRegisters.Length == 0)
-                            {
-                                Console.WriteLine($"Błąd: Slave {slave.UnitId} - brak rejestrów holding.");
-                            }
-                            else
-                            {
-                                for (ushort i = 0; i < slave.HoldingRegisters.Length && i + 1 < _tcpServer.holdingRegisters.localArray.Length; i++)
-                                {
-                                    lock (_syncLock)
-                                    {
-                                        _tcpServer.holdingRegisters[i + 1] = (short)slave.HoldingRegisters[i];
-                                    }
-                                }
-                            }
-
-                            if (slave.InputRegisters == null || slave.InputRegisters.Length == 0)
-                            {
-                                Console.WriteLine($"Błąd: Slave {slave.UnitId} - brak rejestrów wejściowych.");
-                            }
-                            else
-                            {
-                                for (ushort i = 0; i < slave.InputRegisters.Length && i + 1 < _tcpServer.inputRegisters.localArray.Length; i++)
-                                {
-                                    lock (_syncLock)
-                                    {
-                                        _tcpServer.inputRegisters[i + 1] = (short)slave.InputRegisters[i];
-                                    }
-                                }
-                            }
                         }
 
 
 
-                        catch (Exception ex)
+                        catch (ModbusSlaveException ex)
                         {
                             Console.WriteLine($"Błąd w synchronizacji danych dla slave {slave.UnitId}: {ex.Message}");
+                            
                         }
 
                         // Poczekaj przed następną synchronizacją
