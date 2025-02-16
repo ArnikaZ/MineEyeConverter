@@ -14,7 +14,7 @@ namespace ConsoleApp9
         new Lazy<RegisterManager>(() => new RegisterManager());
 
         public static RegisterManager Instance => _instance.Value;
-
+        public byte SlaveId { get; set; }
         public List<ModbusRegister> HoldingRegisters { get; set; }
         public List<ModbusRegister> InputRegisters { get; set; }
         public List<ModbusRegister> Coils { get; set; }

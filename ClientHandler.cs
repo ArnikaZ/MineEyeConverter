@@ -117,7 +117,7 @@ namespace ConsoleApp9
                         _tcpClientAdapter = new TcpClientAdapter(tcpClient);
                         master = factory.CreateRtuMaster(_tcpClientAdapter);
 
-                        Console.WriteLine($"Tcp provider: {provider.Ip} : {provider.Port}");
+                        
                         Log.Debug(provider.Ip + " " + provider.Port);
                     }
                     else
@@ -274,8 +274,6 @@ namespace ConsoleApp9
                     {
                         operationModeHandler.WriteSingleRegister(master, address, startRegister, value);
                     }
-                   
-                   // master?.WriteSingleRegister(address, startRegister, value);
                     return true;
                 }
                 return false;
@@ -340,8 +338,7 @@ namespace ConsoleApp9
                         operationModeHandler.WriteMultipleRegisters(master, address, startAddress, values);
                         return true;
                     }
-                    //master?.WriteMultipleRegisters(address, startAddress, values);
-                    
+
                 }
                 return false;
             }

@@ -47,7 +47,9 @@ namespace ConsoleApp9
                     operationModeHandler = new AutoModeHandler();
                     break;
                 //case "learning":
-                //    operationModeHandler = new LearningModeHandler();
+                //    LearningModeHandler lm = new LearningModeHandler(instanceName);
+                //    List<SlaveConfiguration> discoveredConfigs = lm.DiscoverSlaves();
+                //    lm.SaveConfigurationToXml(discoveredConfigs);
                 //    break;
                 case "manual":
                     operationModeHandler = new ManualModeHandler();
@@ -252,7 +254,7 @@ namespace ConsoleApp9
 
 
 
-                        catch (ModbusSlaveException ex)
+                        catch (Exception ex)
                         {
                             Console.WriteLine($"Błąd w synchronizacji danych dla slave {slave.UnitId}: {ex.Message}");
                             

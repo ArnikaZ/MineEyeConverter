@@ -2,7 +2,7 @@
 <Configuration>
 	<Instances>
 		<Instance name="Szyb1Poziom950Przenosnik2">
-			<OperationMode>Auto</OperationMode>
+			<OperationMode>Learning</OperationMode>
 			<ListeningPort>503</ListeningPort>
 			<ConnectionType>RtuOverTcp</ConnectionType>
 			<RtuSettings>
@@ -14,10 +14,10 @@
 					<UnitId>1</UnitId>
 					<Description>Description1</Description>
 				</Slave>
-				<Slave>
+				<!--<Slave>
 					<UnitId>2</UnitId>
 					<Description>Description2</Description>
-				</Slave>
+				</Slave> -->
 				<!--<Slave>
 					<UnitId>3</UnitId>
 					<Description>Description3</Description>

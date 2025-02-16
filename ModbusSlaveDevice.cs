@@ -13,7 +13,9 @@ namespace ConsoleApp9
         public ushort[] InputRegisters { get; set; }
 
         public bool[] Coils { get; set; }
-        public Slave SlaveConfiguration { get; set; }
+        //public Slave SlaveConfiguration { get; set; }
+        
+
 
         public ModbusSlaveDevice()
         {
@@ -29,11 +31,6 @@ namespace ConsoleApp9
             InputRegisters = new ushort[65536];
             Coils = new bool[65536];
         }
-        public void InitializeFromConfig(Slave config)
-        {
-            if (config == null) Console.WriteLine("Konfiguracja slave jest null");
-            SlaveConfiguration = config;
-            UnitId = (byte)config.UnitId;
-        }
+        
     }
 }
