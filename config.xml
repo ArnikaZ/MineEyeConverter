@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Configuration>
 	<Instances>
-		<Instance name="Szyb1Poziom950Przenosnik2">
-			<OperationMode>Learning</OperationMode>
+		<Instance name="Przenosnik2">
+			<OperationMode>Auto</OperationMode>
 			<ListeningPort>503</ListeningPort>
 			<ConnectionType>RtuOverTcp</ConnectionType>
 			<RtuSettings>
