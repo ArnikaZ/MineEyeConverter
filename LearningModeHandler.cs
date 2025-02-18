@@ -16,7 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace ConsoleApp9
+namespace MineEyeConverter
 {
     public class LearningModeHandler 
     {

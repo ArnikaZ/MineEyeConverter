@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConsoleApp9
+namespace MineEyeConverter
 {
     public class TcpProvider :IProvider
     {

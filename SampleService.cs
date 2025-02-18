@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Topshelf;
 using Topshelf.Logging;
 
-namespace ConsoleApp9
+namespace MineEyeConverter
 {
     internal class SampleService : ServiceControl
     {

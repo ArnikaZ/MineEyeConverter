@@ -30,7 +30,7 @@ using System.Net;
 using System.Threading;
 using System.Net.NetworkInformation;
 using System.IO.Ports;
-using ConsoleApp9;
+using MineEyeConverter;
 
 namespace EasyModbus
 {

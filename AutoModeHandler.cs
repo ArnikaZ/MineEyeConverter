@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static EasyModbus.ModbusServer;
 
-namespace ConsoleApp9
+namespace MineEyeConverter
 {
     public class AutoModeHandler : IOperationModeHandler
     {

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.Configuration.CommandLine;
 
 
-namespace ConsoleApp9
+namespace MineEyeConverter
 {
    
     internal class Program

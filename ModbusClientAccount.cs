@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConsoleApp9
+namespace MineEyeConverter
 {
     internal class ModbusClientAccount
     {
