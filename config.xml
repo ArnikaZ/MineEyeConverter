@@ -36,7 +36,7 @@
 			</ClientWhiteList>
 		</Instance>
 		
-		<Instance name="Szyb1Poziom950Przenosnik1">
+		<Instance name="Przenosnik14">
 			<OperationMode>Auto</OperationMode>
 			<ListeningPort>502</ListeningPort>
 			<ConnectionType>COM</ConnectionType>

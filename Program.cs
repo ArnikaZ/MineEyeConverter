@@ -7,6 +7,9 @@ using System.Configuration.Install;
 using System.Diagnostics;
 using Serilog;
 using System.Xml.Linq;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.Configuration.CommandLine;
 
 
 namespace ConsoleApp9
@@ -15,60 +18,16 @@ namespace ConsoleApp9
     internal class Program
     {
 
-        //static int Main(string[] args)
-        //{
-        //    string name = null;
-
-        //    return (int)HostFactory.Run(x =>
-        //    {
-        //        // Używamy definicji, by pobrać wartość z linii poleceń
-        //        x.AddCommandLineDefinition("name", f => { name = f; });
-        //        x.ApplyCommandLine();
-
-        //        if (string.IsNullOrEmpty(name))
-        //        {
-        //            Console.WriteLine("Service name must be provided.");
-        //            name = "sth";
-        //        }
-
-        //        x.SetServiceName(name);
-        //        x.SetDisplayName(name);
-        //        x.Service(settings => new SampleService(name));
-
-        //        x.OnException((exception) =>
-        //        {
-        //            Console.WriteLine("Exception thrown - " + exception.Message);
-        //        });
-        //    });
-        //}
-
-
-
-        //string instanceName = "defaultservicename";
-        //return (int)HostFactory.Run(x =>
-        //{
-        //    Log.Logger = new LoggerConfiguration()
-        //    .MinimumLevel.Debug()
-        //    .CreateLogger();
-
-
-        //    x.Service(settings => new ModbusService(), s =>
-        //    {
-        //        s.BeforeStartingService(_ => instanceName = args.Length > 0 ? args[0] : "DefaultInstance");
-        //    });
-        //    x.SetStartTimeout(TimeSpan.FromSeconds(10));
-        //    x.SetStopTimeout(TimeSpan.FromSeconds(10));
-        //    x.AddCommandLineDefinition("name", v => instanceName = v);
-        //    x.SetServiceName(instanceName);
-        //});
-
-
-
-
         static void Main(string[] args)
         {
-            
-            string instanceName = null;
+            var config = new ConfigurationBuilder()
+           .SetBasePath(AppContext.BaseDirectory)
+           .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+           .AddCommandLine(args)
+           .Build();
+
+            var instanceName = config["Service:Name"] ?? config["name"];
+            var serviceDescription = config["Service:Description"] ?? "TCP <=> RTU Converter";
 
             var exitCode = HostFactory.Run(x =>
             {
