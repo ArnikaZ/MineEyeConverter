@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Configuration>
 	<Instances>
-		<Instance name="Przenosnik2">
+		<Instance name="Przenosnik13">
 			<OperationMode>Auto</OperationMode>
 			<ListeningPort>503</ListeningPort>
 			<ConnectionType>RtuOverTcp</ConnectionType>

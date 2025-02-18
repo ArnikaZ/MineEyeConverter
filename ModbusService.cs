@@ -7,38 +7,28 @@ using Topshelf;
 
 namespace ConsoleApp9
 {
-    public class ModbusService : ServiceControl
+    public class ModbusService 
     {
         ModbusGateway gateway;
         private string instanceName;
 
-        public ModbusService()
+        public ModbusService(string instanceName)
         {
-            // this.instanceName = instanceName;
+            this.instanceName = instanceName;
         }
-        //public void Start()
-        //{
-
-        //    gateway = new ModbusGateway("Szyb1");
-        //    gateway.Start();
-        //}
-
-        public bool Start(HostControl hostControl)
+        public void Start()
         {
-            gateway = new ModbusGateway("Szyb1");
+
+            gateway = new ModbusGateway(instanceName);
             gateway.Start();
-            return true;
         }
 
-        //public void Stop()
-        //{
-        //    gateway.Stop();
-        //}
-
-        public bool Stop(HostControl hostControl)
+        
+        public void Stop()
         {
             gateway.Stop();
-            return true;
         }
+
+       
     }
 }

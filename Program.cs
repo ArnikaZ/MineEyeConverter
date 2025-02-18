@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Configuration.Install;
 using System.Diagnostics;
 using Serilog;
+using System.Xml.Linq;
 
 
 namespace ConsoleApp9
@@ -14,53 +15,32 @@ namespace ConsoleApp9
     internal class Program
     {
 
-        static int Main(string[] args)
-        {
-            string name = null;
-            // Domyślne ustawienia
-            bool throwOnStart = false;
-            string throwOnStartValue = null;
-            bool throwOnStop = false;
-            bool throwUnhandled = false;
+        //static int Main(string[] args)
+        //{
+        //    string name = null;
 
-            return (int)HostFactory.Run(x =>
-            {
-                Log.Logger = new LoggerConfiguration()
-                    .MinimumLevel.Debug()
-                    .CreateLogger();
+        //    return (int)HostFactory.Run(x =>
+        //    {
+        //        // Używamy definicji, by pobrać wartość z linii poleceń
+        //        x.AddCommandLineDefinition("name", f => { name = f; });
+        //        x.ApplyCommandLine();
 
+        //        if (string.IsNullOrEmpty(name))
+        //        {
+        //            Console.WriteLine("Service name must be provided.");
+        //            name = "sth";
+        //        }
 
+        //        x.SetServiceName(name);
+        //        x.SetDisplayName(name);
+        //        x.Service(settings => new SampleService(name));
 
-                // Używamy definicji, by pobrać wartość z linii poleceń
-                x.AddCommandLineDefinition("name", f => { name = f; });
-                x.ApplyCommandLine();
-                x.SetServiceName(name);
-                x.SetDisplayName(name);
-                x.Service(settings => new SampleService(throwOnStart, throwOnStartValue, throwOnStop, throwUnhandled), s =>
-                {
-                    s.BeforeStartingService(_ => Console.WriteLine("BeforeStart"));
-                    s.BeforeStoppingService(_ => Console.WriteLine("BeforeStop"));
-                });
-
-                x.SetStartTimeout(TimeSpan.FromSeconds(10));
-                x.SetStopTimeout(TimeSpan.FromSeconds(10));
-
-                x.EnableServiceRecovery(r =>
-                {
-                    r.RestartService(3);
-                    r.RunProgram(7, "ping google.com");
-                    r.RestartComputer(5, "message");
-
-                    r.OnCrashOnly();
-                    r.SetResetPeriod(2);
-                });
-
-                x.OnException((exception) =>
-                {
-                    Console.WriteLine("Exception thrown - " + exception.Message);
-                });
-            });
-        }
+        //        x.OnException((exception) =>
+        //        {
+        //            Console.WriteLine("Exception thrown - " + exception.Message);
+        //        });
+        //    });
+        //}
 
 
 
@@ -85,47 +65,53 @@ namespace ConsoleApp9
 
 
 
-        //static void Main(string[] args)
-        //{
-        //    //z konsoli
-        //    var bridge = new ModbusGateway("Przenosnik1");
-        //    bridge.Start();
+        static void Main(string[] args)
+        {
+            
+            string instanceName = null;
 
-        //    Console.WriteLine("Naciśnij dowolny klawisz, aby zakończyć...");
-        //    Console.ReadKey();
+            var exitCode = HostFactory.Run(x =>
+            {
+                x.AddCommandLineDefinition("name", f => { instanceName = f; });
+                x.ApplyCommandLine();
+                x.Service<ModbusService>(s =>
+                {
+                    s.ConstructUsing(modbusService => new ModbusService(instanceName));
+                    s.WhenStarted(modbusService => modbusService.Start());
+                    s.WhenStopped(modbusService => modbusService.Stop());
+                });
 
-        //    bridge.Stop();
-
-        //    //LearningModeHandler lm = new LearningModeHandler("Szyb1Poziom950Przenosnik2");
-        //    //List<SlaveConfiguration> discoveredConfigs = lm.DiscoverSlaves();
-        //    //lm.SaveConfigurationToXml(discoveredConfigs);
-        //    //Console.ReadKey();
-        //}
-
-        //var exitCode = HostFactory.Run(x =>
-        //{
-        //    x.Service<ModbusService>(s =>
-        //    {
-        //        s.ConstructUsing(modbusService => new ModbusService());
-        //        s.WhenStarted(modbusService => modbusService.Start());
-        //        s.WhenStopped(modbusService => modbusService.Stop());
-        //    });
-
-        //    x.RunAsLocalSystem();
-        //    x.SetServiceName(instanceName);
-        //    x.SetDisplayName(instanceName);
-        //    x.SetDescription("TCP <=> RTU Converter");
-        //});
+                x.RunAsLocalSystem();
+                x.SetServiceName(instanceName);
+                x.SetDisplayName(instanceName);
+                x.SetDescription("TCP <=> RTU Converter");
+                x.StartAutomatically();
+            });
 
 
-        //int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
-        //Environment.ExitCode = exitCodeValue;
+            int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
+            Environment.ExitCode = exitCodeValue;
 
 
 
-
+        }
 
 
     }
 
 }
+
+//z konsoli
+//    var bridge = new ModbusGateway("Przenosnik1");
+//    bridge.Start();
+
+//    Console.WriteLine("Naciśnij dowolny klawisz, aby zakończyć...");
+//    Console.ReadKey();
+
+//    bridge.Stop();
+
+//    //LearningModeHandler lm = new LearningModeHandler("Szyb1Poziom950Przenosnik2");
+//    //List<SlaveConfiguration> discoveredConfigs = lm.DiscoverSlaves();
+//    //lm.SaveConfigurationToXml(discoveredConfigs);
+//    //Console.ReadKey();
+//}

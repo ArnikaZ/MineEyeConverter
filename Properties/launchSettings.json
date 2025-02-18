@@ -2,7 +2,7 @@
   "profiles": {
     "ConsoleApp9": {
       "commandName": "Project",
-      "commandLineArgs": "install --name:value"
+      "commandLineArgs": "run -name:Przenosnik13"
     }
   }
 }
