@@ -31,6 +31,8 @@ using System.Threading;
 using System.Net.NetworkInformation;
 using System.IO.Ports;
 using MineEyeConverter;
+using static EasyModbus.TCPHandler;
+using System.Security.Cryptography.X509Certificates;
 
 namespace EasyModbus
 {
@@ -73,6 +75,7 @@ namespace EasyModbus
         public Byte[] bytes;
         public int portIn;                  //For UDP-Connection only
         public IPAddress ipAddressIn;       //For UDP-Connection only
+        public TcpClient tcpClient;
     }
 #endregion
 
@@ -221,6 +224,7 @@ namespace EasyModbus
                 Buffer.BlockCopy(client.Buffer, 0, data, 0, read);
                 networkConnectionParameter.bytes = data;
                 networkConnectionParameter.stream = networkStream;
+                networkConnectionParameter.tcpClient = client.TcpClient;
                 if (dataChanged != null)
                     dataChanged(networkConnectionParameter);
                 try
@@ -288,6 +292,9 @@ namespace EasyModbus
     /// </summary>
     public class ModbusServer
     {
+        public bool UseWhiteList { get; set; }
+        public List<MineEyeConverter.Client> WhiteList { get; set; }
+        public IPAddress clientIp;
         public IOperationModeHandler OperationModeHandler { get; set; }
 
         private bool debug = false;
@@ -529,6 +536,7 @@ namespace EasyModbus
                 NumberOfConnectedClientsChanged();
         }
         #endregion
+        
 
         object lockProcessReceivedData = new object();
         #region Method ProcessReceivedData
@@ -536,6 +544,10 @@ namespace EasyModbus
         {
             lock (lockProcessReceivedData)
             {
+                NetworkConnectionParameter netParam = (NetworkConnectionParameter)networkConnectionParameter;
+                clientIp = ((IPEndPoint)netParam.tcpClient.Client.RemoteEndPoint).Address;
+                //Console.WriteLine($"{clientIp} clientIP");
+
                 Byte[] bytes = new byte[((NetworkConnectionParameter)networkConnectionParameter).bytes.Length];
                 if (debug) StoreLogData.Instance.Store("Received Data: " + BitConverter.ToString(bytes), System.DateTime.Now);
                 NetworkStream stream = ((NetworkConnectionParameter)networkConnectionParameter).stream;
@@ -543,7 +555,7 @@ namespace EasyModbus
                 
                 IPAddress ipAddressIn = ((NetworkConnectionParameter)networkConnectionParameter).ipAddressIn;
                 
-                
+
                 Array.Copy(((NetworkConnectionParameter)networkConnectionParameter).bytes, 0, bytes, 0, ((NetworkConnectionParameter)networkConnectionParameter).bytes.Length);
 
                 ModbusProtocol receiveDataThread = new ModbusProtocol();
@@ -704,11 +716,54 @@ namespace EasyModbus
             }
         }
         #endregion
-       
+        private bool IsClientAuthorized(IPAddress clientIp, int functionCode)
+        {
+            // Jeśli nie używamy white list, to każdy jest autoryzowany
+            if (!UseWhiteList)
+                return true;
+
+            // Określ, czy operacja jest zapisem (write) czy odczytem (read)
+            // Przyjmujemy, że operacje zapisu to: 5, 6, 15, 16 oraz funkcja 23 (zapis częściowy)
+            bool requiresWrite = false;
+            switch (functionCode)
+            {
+                case 5:
+                case 6:
+                case 15:
+                case 16:
+                case 23:
+                    requiresWrite = true;
+                    break;
+            }
+
+            string clientIpStr = clientIp.ToString();
+            // Załóżmy, że klasa Client ma właściwości IpAddress i Permission
+            var client = WhiteList.FirstOrDefault(c => c.IpAddress == clientIpStr);
+            if (client == null)
+                return false; // klient nie znajduje się na białej liście
+
+            // Jeśli operacja zapisu, to klient musi mieć uprawnienie "W"
+            if (requiresWrite && !string.Equals(client.Permission, "W", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return true;
+        }
         #region Method CreateAnswer
         private void CreateAnswer(ModbusProtocol receiveData, ModbusProtocol sendData, NetworkStream stream, int portIn, IPAddress ipAddressIn)
         {
-            if(OperationModeHandler is ManualModeHandler)
+            
+            if (!IsClientAuthorized(clientIp, receiveData.functionCode))
+            {
+                // Klient nie jest na białej liście lub nie ma odpowiednich uprawnień – wysyłamy odpowiedź exception
+                sendData.errorCode = (byte)(receiveData.functionCode + 0x80);
+                sendData.exceptionCode = 0x01; 
+                sendData.length = 0x03; 
+
+                sendException(sendData.errorCode, sendData.exceptionCode, receiveData, sendData, stream, portIn, ipAddressIn);
+                return;
+            }
+            
+            if (OperationModeHandler is ManualModeHandler)
             {
                 //dla trybu manual jeśli rejestr nie jest zdefiniowany
                 if (!IsRegisterDefined(receiveData))

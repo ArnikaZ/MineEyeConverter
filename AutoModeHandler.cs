@@ -17,13 +17,8 @@ namespace MineEyeConverter
     public class AutoModeHandler : IOperationModeHandler
     {
        
-        ClientWhiteList whitelist;
        
-        public AutoModeHandler(ClientWhiteList whiteList)
-        {
-            this.whitelist = whitelist;
-        
-        }
+       
 
         public void Synchronize(ModbusSlaveDevice slave, ModbusServer tcpServer)
         {

@@ -9,7 +9,7 @@ namespace MineEyeConverter
 {
     public class ModbusService 
     {
-        ModbusTcpServer gateway;
+        ModbusTcpServer server;
         private string instanceName;
 
         public ModbusService(string instanceName)
@@ -23,8 +23,8 @@ namespace MineEyeConverter
             string operationMode = instanceConfig.OperationMode;
             if (operationMode=="Auto" || operationMode == "Manual")
             {
-                gateway = new ModbusTcpServer(instanceName);
-                gateway.Start();
+                server = new ModbusTcpServer(instanceName, true);
+                server.Start();
             }
             else if (operationMode == "Learning")
             {
@@ -38,7 +38,7 @@ namespace MineEyeConverter
         
         public void Stop()
         {
-            gateway.Stop();
+            server.Stop();
         }
 
        

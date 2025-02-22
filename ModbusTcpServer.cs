@@ -22,10 +22,10 @@ namespace MineEyeConverter
         public readonly Configuration _config;
 
         public IOperationModeHandler operationModeHandler;
-        ClientWhiteList whiteList;
-
+        //ClientWhiteList whiteList;
+        private List<Client> modbusClientAccounts { get; set; }
         
-        public ModbusTcpServer(string instanceName)
+        public ModbusTcpServer(string instanceName, bool useWhiteList=false)
         {
             
             _config = ConfigLoader.LoadConfiguration("config.xml");
@@ -37,7 +37,7 @@ namespace MineEyeConverter
             int listeningPort = instanceConfig.ListeningPort;
             string connectionType = instanceConfig.ConnectionType;
             RtuSettings rtuSettings = instanceConfig.RtuSettings;
-            whiteList = instanceConfig.ClientWhiteList;
+            
             
             
             _slaveDevices = new Dictionary<byte, ModbusSlaveDevice>();
@@ -50,7 +50,7 @@ namespace MineEyeConverter
             switch (operationMode.ToLower())
             {
                 case "auto":
-                    operationModeHandler = new AutoModeHandler(whiteList);
+                    operationModeHandler = new AutoModeHandler();
                     break;
                 case "manual":
                     operationModeHandler = new ManualModeHandler();
@@ -103,19 +103,18 @@ namespace MineEyeConverter
                     AddSlaveDevice(unitId);
                 }
             }
-            Console.WriteLine($"dostępne slave devices: ");
-            foreach (var slave in _slaveDevices)
-            {
-                Console.WriteLine($"{slave.Key}: {slave.Value.ToString}");
-            }
+            
 
-
+            modbusClientAccounts = instanceConfig.ClientWhiteList.Clients;
+            
 
             // Konfiguracja serwera TCP
             _tcpServer = new ModbusServer
             { 
-               
+               LocalIPAddress=IPAddress.Any,
                 Port = listeningPort,
+                UseWhiteList=useWhiteList,
+               WhiteList=modbusClientAccounts,
                 FunctionCode1Disabled = false,
                 FunctionCode2Disabled = false,
                 FunctionCode3Disabled = false,
@@ -244,7 +243,7 @@ namespace MineEyeConverter
         private void HandleClientConnectionChanged()
         {
             _log.Info($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {_tcpServer.NumberOfConnections}");
-            Console.WriteLine($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {_tcpServer.NumberOfConnections}");
+           // Console.WriteLine($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {_tcpServer.NumberOfConnections}");
             
             
 

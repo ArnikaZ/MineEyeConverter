@@ -31,7 +31,7 @@
 				</Client>
 				<Client>
 					<IpAddress>127.0.0.1</IpAddress>
-					<Permission>R</Permission>
+					<Permission>W</Permission>
 				</Client>
 			</ClientWhiteList>
 		</Instance>
