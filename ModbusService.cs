@@ -9,7 +9,7 @@ namespace MineEyeConverter
 {
     public class ModbusService 
     {
-        ModbusGateway gateway;
+        ModbusTcpServer gateway;
         private string instanceName;
 
         public ModbusService(string instanceName)
@@ -18,9 +18,21 @@ namespace MineEyeConverter
         }
         public void Start()
         {
+            Configuration _config = ConfigLoader.LoadConfiguration("config.xml");
+            var instanceConfig = _config.Instances.FirstOrDefault(i => string.Equals(i.Name, instanceName, StringComparison.OrdinalIgnoreCase));
+            string operationMode = instanceConfig.OperationMode;
+            if (operationMode=="Auto" || operationMode == "Manual")
+            {
+                gateway = new ModbusTcpServer(instanceName);
+                gateway.Start();
+            }
+            else if (operationMode == "Learning")
+            {
+                LearningModeHandler lm = new LearningModeHandler(instanceName);
+                List<SlaveConfiguration> discoveredConfigs = lm.DiscoverSlaves();
+                lm.SaveConfigurationToXml(discoveredConfigs);
+            }
 
-            gateway = new ModbusGateway(instanceName);
-            gateway.Start();
         }
 
         

@@ -157,6 +157,7 @@ namespace MineEyeConverter
                                 {
                                     try
                                     {
+                                        
                                         operationModeHandler.ReadHoldingRegisters(slave, master, StartingAddress, Quantity);
 
                                         

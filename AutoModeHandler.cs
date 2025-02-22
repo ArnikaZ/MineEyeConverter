@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Net;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,12 +16,18 @@ namespace MineEyeConverter
 {
     public class AutoModeHandler : IOperationModeHandler
     {
-        private bool holdingNotFoundMessagePrinted = false;
-        private bool inputNotFoundMessagePrinted = false;
-        private bool coilNotFoundMessagePrinted = false;
+       
+        ClientWhiteList whitelist;
+       
+        public AutoModeHandler(ClientWhiteList whiteList)
+        {
+            this.whitelist = whitelist;
+        
+        }
 
         public void Synchronize(ModbusSlaveDevice slave, ModbusServer tcpServer)
         {
+            
 
             // Sprawdzenie długości tablic przed synchronizacją
             if (slave.Coils == null || slave.Coils.Length == 0)
@@ -104,19 +111,21 @@ namespace MineEyeConverter
 
         public void ReadHoldingRegisters(ModbusSlaveDevice slave, IModbusMaster master, ushort StartingAddress, ushort Quantity)
         {
+                // Czytanie po 125 rejestrów na raz (ograniczenie protokołu Modbus)
+                for (ushort startAddress = StartingAddress; startAddress < (Quantity + StartingAddress); startAddress += 125)
+                {
+
+                    // Obliczenie ile rejestrów zostało do końca
+                    ushort registersToRead = (ushort)Math.Min(125, (StartingAddress + Quantity) - startAddress);
+
+
+                    var holdingData = master.ReadHoldingRegisters(slave.UnitId, (ushort)(startAddress), registersToRead);
+                    // Kopiowanie odczytane dane do tablicy
+                    Array.Copy(holdingData, 0, slave.HoldingRegisters, startAddress, registersToRead);
+                }
+           
             
-            // Czytanie po 125 rejestrów na raz (ograniczenie protokołu Modbus)
-            for (ushort startAddress = StartingAddress; startAddress < (Quantity+StartingAddress); startAddress += 125)
-            {
-
-                // Obliczenie ile rejestrów zostało do końca
-                ushort registersToRead = (ushort)Math.Min(125, (StartingAddress + Quantity) - startAddress);
-
-
-                var holdingData = master.ReadHoldingRegisters(slave.UnitId, (ushort)(startAddress), registersToRead);
-                // Kopiowanie odczytane dane do tablicy
-                Array.Copy(holdingData, 0, slave.HoldingRegisters, startAddress, registersToRead);
-            }
+            
         }
         public void ReadInputRegisters(ModbusSlaveDevice slave, IModbusMaster master, ushort StartingAddress, ushort Quantity)
         {
@@ -140,6 +149,7 @@ namespace MineEyeConverter
         }
         public void WriteSingleRegister(IModbusMaster master, byte address, ushort startRegister, ushort value)
         {
+            
             master.WriteSingleRegister(address, startRegister, value);
         }
 
@@ -155,6 +165,6 @@ namespace MineEyeConverter
         {
             master.WriteMultipleCoils(address, startRegister, values);
         }
-
+        
     }
 }

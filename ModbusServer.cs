@@ -77,8 +77,9 @@ namespace EasyModbus
 #endregion
 
 #region TCPHandler class
-    internal class TCPHandler
+    public class TCPHandler
     {
+        public ModbusTcpServer _tcpServer;
         public delegate void DataChanged(object networkConnectionParameter);
         public event DataChanged dataChanged;
 
@@ -136,6 +137,8 @@ namespace EasyModbus
                 {
                     string ipEndpoint = tcpClient.Client.RemoteEndPoint.ToString();
                     ipEndpoint = ipEndpoint.Split(':')[0];
+                    
+                   
                     if (ipEndpoint != ipAddress)
                     {
                         tcpClient.Client.Disconnect(false);
@@ -320,7 +323,7 @@ namespace EasyModbus
 
 
         private int portIn;
-        private IPAddress ipAddressIn;
+        public IPAddress ipAddressIn;
         private UdpClient udpClient;
         private IPEndPoint iPEndPoint;
         private TCPHandler tcpHandler;
@@ -537,9 +540,10 @@ namespace EasyModbus
                 if (debug) StoreLogData.Instance.Store("Received Data: " + BitConverter.ToString(bytes), System.DateTime.Now);
                 NetworkStream stream = ((NetworkConnectionParameter)networkConnectionParameter).stream;
                 int portIn = ((NetworkConnectionParameter)networkConnectionParameter).portIn;
+                
                 IPAddress ipAddressIn = ((NetworkConnectionParameter)networkConnectionParameter).ipAddressIn;
-
-
+                
+                
                 Array.Copy(((NetworkConnectionParameter)networkConnectionParameter).bytes, 0, bytes, 0, ((NetworkConnectionParameter)networkConnectionParameter).bytes.Length);
 
                 ModbusProtocol receiveDataThread = new ModbusProtocol();

@@ -32,7 +32,7 @@ namespace MineEyeConverter
         private TcpClient tcpClient;
         private TcpClientAdapter _tcpClientAdapter;
 
-        string xmlFilePath = "discovery4";
+        string xmlFilePath = null;
         public LearningModeHandler(string instanceName)
         {
             _config = ConfigLoader.LoadConfiguration("config.xml");
@@ -45,6 +45,7 @@ namespace MineEyeConverter
             RtuSettings rtuSettings = instanceConfig.RtuSettings;
             _slaveIds = new List<byte>();
             string operationMode = instanceConfig.OperationMode;
+            xmlFilePath = instanceName + ".xml";
 
             string portName = rtuSettings.PortName;
             int baudRate = rtuSettings.BaudRate.HasValue ? rtuSettings.BaudRate.Value : 9600;
@@ -107,11 +108,11 @@ namespace MineEyeConverter
             
             List<SlaveConfiguration> configs = new List<SlaveConfiguration>();
             ushort maxHoldingAddress = 100;  // 65535 zakres adresów
-            ushort holdingBlockSize = 125;
+            ushort holdingBlockSize = 10;
             ushort maxInputAddress = 100;
-            ushort inputBlockSize = 125;
+            ushort inputBlockSize = 10;
             ushort maxCoilsAddress = 100;
-            ushort coilsBlockSize = 125;
+            ushort coilsBlockSize = 10;
 
             foreach (byte slaveId in _slaveIds)
             {
@@ -310,6 +311,6 @@ namespace MineEyeConverter
             };
         }
 
-
+      
     }
 }

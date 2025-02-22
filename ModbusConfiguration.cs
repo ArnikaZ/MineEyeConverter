@@ -77,6 +77,16 @@ namespace MineEyeConverter
     {
         [XmlElement("Client")]
         public List<Client> Clients { get; set; }
+        public bool CanClientRead(string ip)
+        {
+            return Clients.Any(c => string.Equals(c.IpAddress, ip));
+        }
+        public bool CanClientWrite(string ip)
+        {
+            return Clients.Any(c =>
+                string.Equals(c.IpAddress, ip, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Permission, "W", StringComparison.OrdinalIgnoreCase));
+        }
     }
 
     public class Client
