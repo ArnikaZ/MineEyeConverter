@@ -10,7 +10,7 @@ namespace MineEyeConverter
     public class ModbusService 
     {
         ModbusTcpServer server;
-        private string instanceName;
+        private readonly string instanceName;
 
         public ModbusService(string instanceName)
         {

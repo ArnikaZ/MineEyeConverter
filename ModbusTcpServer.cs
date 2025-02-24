@@ -24,7 +24,10 @@ namespace MineEyeConverter
         public IOperationModeHandler operationModeHandler;
         //ClientWhiteList whiteList;
         private List<Client> modbusClientAccounts { get; set; }
-        
+        private int _previousConnectionCount = -1;
+
+
+
         public ModbusTcpServer(string instanceName, bool useWhiteList=false)
         {
             
@@ -242,10 +245,14 @@ namespace MineEyeConverter
 
         private void HandleClientConnectionChanged()
         {
-            _log.Info($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {_tcpServer.NumberOfConnections}");
-           // Console.WriteLine($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {_tcpServer.NumberOfConnections}");
-            
-            
+            int currentCount = _tcpServer.NumberOfConnections;
+            if (currentCount != _previousConnectionCount)
+            {
+                _previousConnectionCount = currentCount;
+                _log.Info($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {currentCount}");
+            }
+
+
 
         }
 

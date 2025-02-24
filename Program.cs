@@ -12,20 +12,24 @@ using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.Configuration.CommandLine;
 using MineEyeConverter;
 
-
+[assembly: log4net.Config.XmlConfigurator(Watch =true)]
 namespace MineEyeConverter
 {
    
     internal class Program
     {
-
+        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        
         static void Main(string[] args)
         {
+            _log.Info("Application starting");
             var config = new ConfigurationBuilder()
            .SetBasePath(AppContext.BaseDirectory)
            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
            .AddCommandLine(args)
            .Build();
+
+            _log.Info($"Configuration loaded succesfully");
 
             var instanceName = config["Service:Name"] ?? config["name"];
             var serviceDescription = config["Service:Description"] ?? "TCP <=> RTU Converter";
@@ -44,7 +48,7 @@ namespace MineEyeConverter
                 x.RunAsLocalSystem();
                 x.SetServiceName(instanceName);
                 x.SetDisplayName(instanceName);
-                x.SetDescription("TCP <=> RTU Converter");
+                x.SetDescription(serviceDescription);
                 x.StartAutomatically();
             });
 
