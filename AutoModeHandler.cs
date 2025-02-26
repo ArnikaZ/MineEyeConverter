@@ -64,9 +64,12 @@ namespace MineEyeConverter
                     ushort registersToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
                  var data=master.ReadHoldingRegisters(slave.UnitId, server.LastStartingAddress, registersToRead);
                 // Kopiowanie odczytane dane do tablicy
-                Array.Copy(data, 0, slave.HoldingRegisters, server.LastStartingAddress, server.LastQuantity);
-               Array.Copy(data, 0, server.holdingRegisters.localArray, server.LastStartingAddress, server.LastQuantity);
+                Array.Copy(data, 0, slave.HoldingRegisters, startAddress, registersToRead);
+                Array.Copy(slave.HoldingRegisters, server.LastStartingAddress,
+           server.holdingRegisters.localArray, server.LastStartingAddress,
+           server.LastQuantity);
             }
+            
         }
         public void ReadInputRegisters(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
         {
