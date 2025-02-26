@@ -13,7 +13,7 @@ namespace MineEyeConverter
         public ushort[] InputRegisters { get; set; }
 
         public bool[] Coils { get; set; }
-        //public Slave SlaveConfiguration { get; set; }
+     
         
 
 
@@ -31,6 +31,8 @@ namespace MineEyeConverter
             InputRegisters = new ushort[65536];
             Coils = new bool[65536];
         }
+
+      
         
     }
 }

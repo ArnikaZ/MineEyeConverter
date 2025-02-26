@@ -35,6 +35,7 @@ namespace MineEyeConverter
         private bool isConnected;
         private IOperationModeHandler operationModeHandler;
 
+        private ModbusServer _server;
         public virtual IProvider DataProvider
         {
             get
@@ -68,22 +69,15 @@ namespace MineEyeConverter
             set { _serialProvider = (SerialProvider)value; }
         }
 
-        public byte UnitIdentifier { get; set; }
-        public ushort StartingAddress { get; set; }
-        public ushort Quantity { get; set; }
+      
 
-        public void UpdateParameters(byte unitIdentifier, ushort startingAddress, ushort quantity)
-        {
-            UnitIdentifier = unitIdentifier;
-            StartingAddress = startingAddress;
-            Quantity = quantity;
-        }
-        public ClientHandler(IOperationModeHandler operationMode)
+        public ClientHandler(IOperationModeHandler operationMode, ModbusServer server)
         {
             SlaveList = new List<ModbusSlaveDevice>();
             factory = new ModbusFactory();
             Communicate = true;
             operationModeHandler = operationMode;
+            _server = server;
         }
 
         
@@ -151,15 +145,15 @@ namespace MineEyeConverter
                     {
                         try
                         {
-                            var slave = SlaveList.FirstOrDefault(s => s.UnitId == UnitIdentifier);
+                            var slave = SlaveList.FirstOrDefault(s => s.UnitId == _server.CurrentUnitIdentifier);
                             if (slave != null)
                                 try
                                 {
                                     try
                                     {
                                         
-                                        operationModeHandler.ReadHoldingRegisters(slave, master, StartingAddress, Quantity);
-
+                                        operationModeHandler.ReadHoldingRegisters(slave, master, _server);
+                                        
                                         
                                     }
                                     catch (Exception ex)
@@ -169,7 +163,7 @@ namespace MineEyeConverter
 
                                     try
                                     {
-                                        operationModeHandler.ReadInputRegisters(slave, master, StartingAddress, Quantity);
+                                        operationModeHandler.ReadInputRegisters(slave, master, _server);
                                         
                                     }
                                     catch (Exception ex)
@@ -179,7 +173,7 @@ namespace MineEyeConverter
 
                                     try
                                     {
-                                        operationModeHandler.ReadCoils(slave, master, StartingAddress, Quantity);
+                                        operationModeHandler.ReadCoils(slave, master, _server);
                                         
 
                                     }

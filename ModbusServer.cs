@@ -297,6 +297,7 @@ namespace EasyModbus
         public IPAddress clientIp;
         public IOperationModeHandler OperationModeHandler { get; set; }
 
+        
         private bool debug = false;
         Int32 port = 502;
         ModbusProtocol receiveData;

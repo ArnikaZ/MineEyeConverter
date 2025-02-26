@@ -37,7 +37,7 @@
 		</Instance>
 		
 		<Instance name="Przenosnik14">
-			<OperationMode>Auto</OperationMode>
+			<OperationMode>auto</OperationMode>
 			<ListeningPort>502</ListeningPort>
 			<ConnectionType>COM</ConnectionType>
 			<RtuSettings>

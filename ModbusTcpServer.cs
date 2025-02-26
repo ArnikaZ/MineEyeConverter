@@ -30,7 +30,8 @@ namespace MineEyeConverter
 
         public ModbusTcpServer(string instanceName, bool useWhiteList=false)
         {
-            
+
+          
             _config = ConfigLoader.LoadConfiguration("config.xml");
             var instanceConfig = _config.Instances.FirstOrDefault(i => string.Equals(i.Name, instanceName, StringComparison.OrdinalIgnoreCase));
             if (instanceConfig == null)
@@ -41,10 +42,7 @@ namespace MineEyeConverter
             string connectionType = instanceConfig.ConnectionType;
             RtuSettings rtuSettings = instanceConfig.RtuSettings;
             
-            
-            
-            _slaveDevices = new Dictionary<byte, ModbusSlaveDevice>();
-
+            modbusClientAccounts = instanceConfig.ClientWhiteList.Clients;
             // Odczyt trybu pracy z konfiguracji
             string operationMode = instanceConfig.OperationMode;
             
@@ -64,11 +62,35 @@ namespace MineEyeConverter
             }
 
 
+            // Konfiguracja serwera TCP
+            _tcpServer = new ModbusServer
+            {
+                LocalIPAddress = IPAddress.Any,
+                Port = listeningPort,
+                UseWhiteList = useWhiteList,
+                WhiteList = modbusClientAccounts,
+                FunctionCode1Disabled = false,
+                FunctionCode2Disabled = false,
+                FunctionCode3Disabled = false,
+                FunctionCode4Disabled = false,
+                FunctionCode5Disabled = false,
+                FunctionCode6Disabled = false,
+                FunctionCode15Disabled = false,
+                FunctionCode16Disabled = false
+            };
+
+
+
+
+
+
             // Konfiguracja klienta RTU
             if (connectionType.Equals("COM", StringComparison.OrdinalIgnoreCase))
             {
-                _rtuClient = new ClientHandler(operationModeHandler)
+
+                _rtuClient = new ClientHandler(operationModeHandler, _tcpServer)
                 {
+                    
                     
                     SerialDataProvider = new SerialProvider
                     {
@@ -82,7 +104,7 @@ namespace MineEyeConverter
             }
             else if (connectionType.Equals("RtuOverTcp", StringComparison.OrdinalIgnoreCase))
             {
-                _rtuClient = new ClientHandler(operationModeHandler)
+                _rtuClient = new ClientHandler(operationModeHandler, _tcpServer)
                 {
                     TcpDataProvider = new TcpProvider
                     {
@@ -95,8 +117,9 @@ namespace MineEyeConverter
             {
                 Console.WriteLine($"Nieobsługiwany typ połączenia: {connectionType}");
             }
-          
 
+
+            _slaveDevices = new Dictionary<byte, ModbusSlaveDevice>();
             //wczytanie urządzeń slave dla danej instancji
             if (instanceConfig.SlaveDeviceList != null && instanceConfig.SlaveDeviceList.Slaves != null)
             {
@@ -106,30 +129,13 @@ namespace MineEyeConverter
                     AddSlaveDevice(unitId);
                 }
             }
-            
 
-            modbusClientAccounts = instanceConfig.ClientWhiteList.Clients;
-            
 
-            // Konfiguracja serwera TCP
-            _tcpServer = new ModbusServer
-            { 
-               LocalIPAddress=IPAddress.Any,
-                Port = listeningPort,
-                UseWhiteList=useWhiteList,
-               WhiteList=modbusClientAccounts,
-                FunctionCode1Disabled = false,
-                FunctionCode2Disabled = false,
-                FunctionCode3Disabled = false,
-                FunctionCode4Disabled = false,
-                FunctionCode5Disabled = false,
-                FunctionCode6Disabled = false,
-                FunctionCode15Disabled = false,
-                FunctionCode16Disabled = false
-            };
-            
+
+
+
             // Podpięcie handlerów zdarzeń dla serwera TCP
-            
+
             _tcpServer.CoilsChanged += HandleCoilsChanged;
             _tcpServer.HoldingRegistersChanged += HandleHoldingRegistersChanged;
             _tcpServer.NumberOfConnectedClientsChanged += HandleClientConnectionChanged;
@@ -187,8 +193,7 @@ namespace MineEyeConverter
 
             // Uruchomienie klienta RTU w osobnym wątku
             Task.Run(() => _rtuClient.Start());
-            // Uruchomienie synchronizacji w osobnym wątku
-            Task.Run(SynchronizeRegisters);
+          
            
         }
 
@@ -257,46 +262,46 @@ namespace MineEyeConverter
         }
 
         
-        private async Task SynchronizeRegisters()
-        {
-            while (_isRunning)
-            {
+        //private async Task SynchronizeRegisters()
+        //{
+        //    while (_isRunning)
+        //    {
                 
-                    try
-                    {
-                        _rtuClient.UpdateParameters(_tcpServer.CurrentUnitIdentifier,
-                                            _tcpServer.LastStartingAddress,
-                                            _tcpServer.LastQuantity);
+        //            try
+        //            {
+        //                _rtuClient.UpdateParameters(_tcpServer.CurrentUnitIdentifier,
+        //                                    _tcpServer.LastStartingAddress,
+        //                                    _tcpServer.LastQuantity);
 
-                        if (_slaveDevices.TryGetValue(_tcpServer.CurrentUnitIdentifier, out ModbusSlaveDevice slave))
-                        {
+        //                if (_slaveDevices.TryGetValue(_tcpServer.CurrentUnitIdentifier, out ModbusSlaveDevice slave))
+        //                {
 
-                            try
-                            {
-                                operationModeHandler.Synchronize(slave, _tcpServer);
+        //                    try
+        //                    {
+        //                        operationModeHandler.Synchronize(slave, _tcpServer);
 
-                            }
+        //                    }
 
 
 
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Błąd w synchronizacji danych dla slave {slave.UnitId}: {ex.Message}");
+        //                    catch (Exception ex)
+        //                    {
+        //                        Console.WriteLine($"Błąd w synchronizacji danych dla slave {slave.UnitId}: {ex.Message}");
 
-                            }
+        //                    }
 
-                            // Poczekaj przed następną synchronizacją
-                            await Task.Delay(100); // Synchronizacja co 100ms
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error($"Błąd podczas synchronizacji: {ex.Message}");
-                        await Task.Delay(1000); // W przypadku błędu, poczekaj dłużej
-                    }
+        //                    // Poczekaj przed następną synchronizacją
+        //                    await Task.Delay(100); // Synchronizacja co 100ms
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                _log.Error($"Błąd podczas synchronizacji: {ex.Message}");
+        //                await Task.Delay(1000); // W przypadku błędu, poczekaj dłużej
+        //            }
                 
-            }
-        }
+        //    }
+        //}
 
 
         public void Dispose()

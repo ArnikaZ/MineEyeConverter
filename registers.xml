@@ -29,7 +29,7 @@
 			<SlaveId>2</SlaveId>
 			<StartAddress>0</StartAddress>
 			<Quantity>20</Quantity>
-			<IsActive>false</IsActive>
+			<IsActive>true</IsActive>
 			<functionCode>4</functionCode>
 			<AccessMode>W</AccessMode>
 		</ModbusRegister>

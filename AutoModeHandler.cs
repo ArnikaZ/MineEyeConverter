@@ -18,69 +18,20 @@ namespace MineEyeConverter
     {
        
        
-       
-
-        public void Synchronize(ModbusSlaveDevice slave, ModbusServer tcpServer)
-        {
-            
-
-            // Sprawdzenie długości tablic przed synchronizacją
-            if (slave.Coils == null || slave.Coils.Length == 0)
-            {
-                Console.WriteLine($"Błąd: Slave {slave.UnitId} - brak cewek (Coils).");
-            }
-            else
-            {
-                for (ushort i = 0; i < slave.Coils.Length && i + 1 < tcpServer.coils.localArray.Length; i++)
-                {
-
-                    tcpServer.coils[i + 1] = slave.Coils[i];
-
-                }
-            }
-
-            if (slave.HoldingRegisters == null || slave.HoldingRegisters.Length == 0)
-            {
-                Console.WriteLine($"Błąd: Slave {slave.UnitId} - brak rejestrów holding.");
-            }
-            else
-            {
-                for (ushort i = 0; i < slave.HoldingRegisters.Length && i + 1 < tcpServer.holdingRegisters.localArray.Length; i++)
-                {
-
-                    tcpServer.holdingRegisters[i+1] = (short)slave.HoldingRegisters[i];
-
-                }
-            }
-
-            if (slave.InputRegisters == null || slave.InputRegisters.Length == 0)
-            {
-                Console.WriteLine($"Błąd: Slave {slave.UnitId} - brak rejestrów wejściowych.");
-            }
-            else
-            {
-                for (ushort i = 0; i < slave.InputRegisters.Length && i + 1 < tcpServer.inputRegisters.localArray.Length; i++)
-                {
-
-                    tcpServer.inputRegisters[i + 1] = (short)slave.InputRegisters[i];
-
-                }
-            }
-        }
         public void HandleCoilsChanged(byte slaveId, int coil, int numberOfPoints, ModbusServer tcpServer, ClientHandler rtuClient, Dictionary<byte, ModbusSlaveDevice> slaveDevices)
         {
             // Pobierz dane z serwera TCP
             bool[] values = new bool[numberOfPoints];
             for (int i = 0; i < numberOfPoints; i++)
             {
-                values[i] = tcpServer.coils[coil];
+                values[i] = tcpServer.coils[coil+i];
             }
 
 
             if (slaveDevices.ContainsKey(slaveId))
             {
                 // Zapisz do urządzenia RTU
-                rtuClient.WriteMultipleCoils(slaveId, (ushort)(coil - 1), values);
+                rtuClient.WriteMultipleCoils(slaveId, (ushort)(coil-1 ), values);
                 //log.Debug($"Przesłano zmianę coils do urządzenia {slaveId}, adres początkowy: {coil}, liczba punktów: {numberOfPoints}");
                 Console.WriteLine($"[Auto] Przesłano zmianę coils do urządzenia {slaveId}, adres początkowy: {coil}, liczba punktów: {numberOfPoints}");
             }
@@ -104,42 +55,39 @@ namespace MineEyeConverter
             }
         }
 
-        public void ReadHoldingRegisters(ModbusSlaveDevice slave, IModbusMaster master, ushort StartingAddress, ushort Quantity)
+        public void ReadHoldingRegisters(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
         {
                 // Czytanie po 125 rejestrów na raz (ograniczenie protokołu Modbus)
-                for (ushort startAddress = StartingAddress; startAddress < (Quantity + StartingAddress); startAddress += 125)
+                for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity + server.LastStartingAddress); startAddress += 125)
                 {
-
                     // Obliczenie ile rejestrów zostało do końca
-                    ushort registersToRead = (ushort)Math.Min(125, (StartingAddress + Quantity) - startAddress);
-
-
-                    var holdingData = master.ReadHoldingRegisters(slave.UnitId, (ushort)(startAddress), registersToRead);
-                    // Kopiowanie odczytane dane do tablicy
-                    Array.Copy(holdingData, 0, slave.HoldingRegisters, startAddress, registersToRead);
-                }
-           
-            
-            
-        }
-        public void ReadInputRegisters(ModbusSlaveDevice slave, IModbusMaster master, ushort StartingAddress, ushort Quantity)
-        {
-            for (ushort startAddress = StartingAddress; startAddress < (Quantity+StartingAddress); startAddress += 125)
-            {
-                ushort registersToRead = (ushort)Math.Min(125, (StartingAddress + Quantity) - startAddress);
-
-                var inputData = master.ReadInputRegisters(slave.UnitId, startAddress, registersToRead);
-                Array.Copy(inputData, 0, slave.InputRegisters, startAddress, registersToRead);
+                    ushort registersToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
+                 var data=master.ReadHoldingRegisters(slave.UnitId, server.LastStartingAddress, registersToRead);
+                // Kopiowanie odczytane dane do tablicy
+                Array.Copy(data, 0, slave.HoldingRegisters, server.LastStartingAddress, server.LastQuantity);
+               Array.Copy(data, 0, server.holdingRegisters.localArray, server.LastStartingAddress, server.LastQuantity);
             }
         }
-        public void ReadCoils(ModbusSlaveDevice slave, IModbusMaster master, ushort StartingAddress, ushort Quantity)
+        public void ReadInputRegisters(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
         {
-            for (ushort startAddress = StartingAddress; startAddress < (Quantity+StartingAddress); startAddress += 2000)
+            for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity+server.LastStartingAddress); startAddress += 125)
             {
-                ushort coilsToRead = (ushort)Math.Min(125, (StartingAddress + Quantity) - startAddress);
+                ushort registersToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
+                var data= master.ReadInputRegisters(slave.UnitId, startAddress, registersToRead);
+                Array.Copy(data, 0, slave.InputRegisters, startAddress, registersToRead);
+               Array.Copy(data, 0, server.inputRegisters.localArray, startAddress, registersToRead);
+            }
+        }
+        public void ReadCoils(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
+        {
+            for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity+server.LastStartingAddress); startAddress += 125)
+            {
+                ushort coilsToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
+                
+                var data=master.ReadCoils(slave.UnitId, startAddress, coilsToRead);
+                Array.Copy(data, 0, slave.Coils, startAddress, coilsToRead);
+                Array.Copy(data, 0, server.coils.localArray, startAddress, coilsToRead);
 
-                var coilsData = master.ReadCoils(slave.UnitId, startAddress, coilsToRead);
-                Array.Copy(coilsData, 0, slave.Coils, startAddress, coilsToRead);
             }
         }
         public void WriteSingleRegister(IModbusMaster master, byte address, ushort startRegister, ushort value)

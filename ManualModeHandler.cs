@@ -25,96 +25,96 @@ namespace MineEyeConverter
             registerManager.LoadFromFile("registers.xml");
         }
 
-        public void Synchronize(ModbusSlaveDevice slave, ModbusServer tcpServer)
-        {
+        //public void Synchronize(ModbusSlaveDevice slave, ModbusServer tcpServer)
+        //{
             
-            var holdingRegister = registerManager.HoldingRegisters.FirstOrDefault(r =>
-                r.SlaveId == slave.UnitId &&
-                r.IsActive &&
-                (tcpServer.LastStartingAddress >= r.StartAddress &&
-                tcpServer.LastStartingAddress < r.StartAddress + r.Quantity) &&
-                r.functionCode == tcpServer.FunctionCode);
+        //    var holdingRegister = registerManager.HoldingRegisters.FirstOrDefault(r =>
+        //        r.SlaveId == slave.UnitId &&
+        //        r.IsActive &&
+        //        (tcpServer.LastStartingAddress >= r.StartAddress &&
+        //        tcpServer.LastStartingAddress < r.StartAddress + r.Quantity) &&
+        //        r.functionCode == tcpServer.FunctionCode);
            
             
-            if (holdingRegister != null)
-            {
-                holdingNotFoundMessagePrinted = false;
-                for (ushort i = holdingRegister.StartAddress; i < holdingRegister.StartAddress + holdingRegister.Quantity; i++)
-                {
-                    if (i < tcpServer.holdingRegisters.localArray.Length && i < slave.HoldingRegisters.Length)
-                    {
-                        tcpServer.holdingRegisters[i+1] = (short)slave.HoldingRegisters[i];
+        //    if (holdingRegister != null)
+        //    {
+        //        holdingNotFoundMessagePrinted = false;
+        //        for (ushort i = holdingRegister.StartAddress; i < holdingRegister.StartAddress + holdingRegister.Quantity; i++)
+        //        {
+        //            if (i < tcpServer.holdingRegisters.localArray.Length && i < slave.HoldingRegisters.Length)
+        //            {
+        //                tcpServer.holdingRegisters[i+1] = (short)slave.HoldingRegisters[i];
                    
-                    }
-                }
-            }
-            else
-            {
-                if (!holdingNotFoundMessagePrinted)
-                {
-                    Console.WriteLine("Nie znaleziono odpowiadającego rejestru holding");
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        if (!holdingNotFoundMessagePrinted)
+        //        {
+        //            Console.WriteLine("Nie znaleziono odpowiadającego rejestru holding");
                     
-                    holdingNotFoundMessagePrinted = true;
+        //            holdingNotFoundMessagePrinted = true;
                     
-                }
-            }
+        //        }
+        //    }
 
 
-            var inputRegister = registerManager.InputRegisters.FirstOrDefault(r =>
-            r.SlaveId == slave.UnitId &&
-            r.IsActive &&
-            (tcpServer.LastStartingAddress >= r.StartAddress &&
-            tcpServer.LastStartingAddress < r.StartAddress + r.Quantity) &&
-            r.functionCode == tcpServer.FunctionCode);
+        //    var inputRegister = registerManager.InputRegisters.FirstOrDefault(r =>
+        //    r.SlaveId == slave.UnitId &&
+        //    r.IsActive &&
+        //    (tcpServer.LastStartingAddress >= r.StartAddress &&
+        //    tcpServer.LastStartingAddress < r.StartAddress + r.Quantity) &&
+        //    r.functionCode == tcpServer.FunctionCode);
 
 
-            if (inputRegister != null)
-            {
-                inputNotFoundMessagePrinted = false;
-                for (ushort i = inputRegister.StartAddress; i < inputRegister.StartAddress + inputRegister.Quantity; i++)
-                {
-                    if (i < tcpServer.inputRegisters.localArray.Length && i < slave.InputRegisters.Length)
-                    {
-                        tcpServer.inputRegisters[i+1] = (short)slave.InputRegisters[i];
-                    }
-                }
-            }
-            else
-            {
-                if (!inputNotFoundMessagePrinted)
-                {
-                    Console.WriteLine("Nie znaleziono odpowiadającego rejestru input");
-                    inputNotFoundMessagePrinted = true;
-                }
-            }
+        //    if (inputRegister != null)
+        //    {
+        //        inputNotFoundMessagePrinted = false;
+        //        for (ushort i = inputRegister.StartAddress; i < inputRegister.StartAddress + inputRegister.Quantity; i++)
+        //        {
+        //            if (i < tcpServer.inputRegisters.localArray.Length && i < slave.InputRegisters.Length)
+        //            {
+        //                tcpServer.inputRegisters[i+1] = (short)slave.InputRegisters[i];
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        if (!inputNotFoundMessagePrinted)
+        //        {
+        //            Console.WriteLine("Nie znaleziono odpowiadającego rejestru input");
+        //            inputNotFoundMessagePrinted = true;
+        //        }
+        //    }
 
-            var coilRegister = registerManager.Coils.FirstOrDefault(r =>
-            r.SlaveId == slave.UnitId &&
-            r.IsActive &&
-            (tcpServer.LastStartingAddress >= r.StartAddress &&
-            tcpServer.LastStartingAddress < r.StartAddress + r.Quantity) &&
-            r.functionCode == tcpServer.FunctionCode);
+        //    var coilRegister = registerManager.Coils.FirstOrDefault(r =>
+        //    r.SlaveId == slave.UnitId &&
+        //    r.IsActive &&
+        //    (tcpServer.LastStartingAddress >= r.StartAddress &&
+        //    tcpServer.LastStartingAddress < r.StartAddress + r.Quantity) &&
+        //    r.functionCode == tcpServer.FunctionCode);
 
-            if (coilRegister != null)
-            {
-                coilNotFoundMessagePrinted = false;
-                for (ushort i = coilRegister.StartAddress; i < coilRegister.StartAddress + coilRegister.Quantity; i++)
-                {
-                    if (i < tcpServer.coils.localArray.Length && i < slave.Coils.Length)
-                    {
-                        tcpServer.coils[i+1] = slave.Coils[i];
-                    }
-                }
-            }
-            else
-            {
-                if (!coilNotFoundMessagePrinted)
-                {
-                    Console.WriteLine("Nie znaleziono odpowiadającego coil");
-                    coilNotFoundMessagePrinted = true;
-                }
-            }
-        }
+        //    if (coilRegister != null)
+        //    {
+        //        coilNotFoundMessagePrinted = false;
+        //        for (ushort i = coilRegister.StartAddress; i < coilRegister.StartAddress + coilRegister.Quantity; i++)
+        //        {
+        //            if (i < tcpServer.coils.localArray.Length && i < slave.Coils.Length)
+        //            {
+        //                tcpServer.coils[i+1] = slave.Coils[i];
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        if (!coilNotFoundMessagePrinted)
+        //        {
+        //            Console.WriteLine("Nie znaleziono odpowiadającego coil");
+        //            coilNotFoundMessagePrinted = true;
+        //        }
+        //    }
+        //}
 
         public void HandleCoilsChanged(byte slaveId, int coil, int numberOfPoints, ModbusServer tcpServer, ClientHandler rtuClient, Dictionary<byte, ModbusSlaveDevice> slaveDevices)
         {
@@ -181,33 +181,36 @@ namespace MineEyeConverter
             }
         }
 
-        public void ReadHoldingRegisters(ModbusSlaveDevice slave, IModbusMaster master, ushort startingAddress, ushort quantity)
+        public void ReadHoldingRegisters(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
         {
-            for (ushort start = startingAddress; start < (quantity+startingAddress); start += 125)
+            for (ushort start = server.LastStartingAddress; start < (server.LastQuantity+server.LastStartingAddress); start += 125)
             {
-                ushort regsToRead = (ushort)Math.Min(125, (startingAddress + quantity) - startingAddress);
+                ushort regsToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - server.LastStartingAddress);
                 var holdingData = master.ReadHoldingRegisters(slave.UnitId, start, regsToRead);
                 Array.Copy(holdingData, 0, slave.HoldingRegisters, start, regsToRead);
+                Array.Copy(holdingData, 0, server.holdingRegisters.localArray, start, regsToRead);
             }
         }
 
-        public void ReadInputRegisters(ModbusSlaveDevice slave, IModbusMaster master, ushort startingAddress, ushort quantity)
+        public void ReadInputRegisters(ModbusSlaveDevice slave, IModbusMaster master,  ModbusServer server)
         {
-            for (ushort start = startingAddress; start < (quantity+startingAddress); start += 125)
+            for (ushort start = server.LastStartingAddress; start < (server.LastQuantity+server.LastStartingAddress); start += 125)
             {
-                ushort regsToRead = (ushort)Math.Min(125, (startingAddress + quantity) - startingAddress);
+                ushort regsToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - server.LastStartingAddress);
                 var inputData = master.ReadInputRegisters(slave.UnitId, start, regsToRead);
                 Array.Copy(inputData, 0, slave.InputRegisters, start, regsToRead);
+                Array.Copy(inputData, 0, server.inputRegisters.localArray, start, regsToRead);
             }
         }
 
-        public void ReadCoils(ModbusSlaveDevice slave, IModbusMaster master, ushort startingAddress, ushort quantity)
+        public void ReadCoils(ModbusSlaveDevice slave, IModbusMaster master,  ModbusServer server)
         {
-            for (ushort start = startingAddress; start < (quantity+startingAddress); start += 2000)
+            for (ushort start = server.LastStartingAddress; start < (server.LastQuantity+server.LastStartingAddress); start += 2000)
             {
-                ushort coilsToRead = (ushort)Math.Min(125, (startingAddress + quantity) - startingAddress);
+                ushort coilsToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - server.LastStartingAddress);
                 var coilsData = master.ReadCoils(slave.UnitId, start, coilsToRead);
                 Array.Copy(coilsData, 0, slave.Coils, start, coilsToRead);
+                Array.Copy(coilsData, 0, server.coils.localArray, start, coilsToRead);
             }
         }
         public void WriteSingleRegister(IModbusMaster master, byte address, ushort startRegister, ushort value)
