@@ -902,7 +902,6 @@ namespace EasyModbus
         private bool IsRegisterDefined(ModbusProtocol receiveData)
         {
             var rm = RegisterManager.Instance;
-            // Dla funkcji obsługujących rejestry holding: 3 (odczyt)
 
             if (receiveData.functionCode == 3)
             {
@@ -917,16 +916,12 @@ namespace EasyModbus
 
                     if (register == null)
                     {
-                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress}  dla slave {receiveData.unitIdentifier}.");
                         return false;
                     }
                 }
                 return true;
             }
 
-
-
-            // holding registers : 6 (zapis pojedynczego rejestru) oraz 16 (zapis wielu rejestrów)
             if (receiveData.functionCode == 6 || receiveData.functionCode == 16)
             {
                 for (ushort i = 0; i < receiveData.quantity; i++)
@@ -941,13 +936,11 @@ namespace EasyModbus
 
                     if (register == null)
                     {
-                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} z uprawnieniami W dla slave {receiveData.unitIdentifier}.");
                         return false;
                     }
                 }
                 return true;
             }
-            // Dla rejestrów input – funkcja 4 (odczyt)
             else if (receiveData.functionCode == 4)
             {
                 for (ushort i = 0; i < receiveData.quantity; i++)
@@ -961,13 +954,12 @@ namespace EasyModbus
 
                     if (register == null)
                     {
-                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} dla slave {receiveData.unitIdentifier}.");
                         return false;
                     }
                 }
                 return true;
             }
-            //odczyt cewek
+
             else if (receiveData.functionCode == 1)
             {
                 for (ushort i = 0; i < receiveData.quantity; i++)
@@ -981,13 +973,12 @@ namespace EasyModbus
 
                     if (register == null)
                     {
-                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} dla slave {receiveData.unitIdentifier}.");
                         return false;
                     }
                 }
                 return true;
             }
-            //zapis cewek
+       
             else if(receiveData.functionCode==5 || receiveData.functionCode == 15)
             {
                 for (ushort i = 0; i < receiveData.quantity; i++)
@@ -1002,13 +993,13 @@ namespace EasyModbus
 
                     if (register == null)
                     {
-                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} z uprawnieniami W dla slave {receiveData.unitIdentifier}.");
+                       
                         return false;
                     }
                 }
                 return true;
             }
-            return false; //dla niezdefiniowanych funkcji
+            return false; 
             
         }
         #endregion

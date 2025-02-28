@@ -10,7 +10,7 @@ namespace MineEyeConverter
 {
     public interface IOperationModeHandler
     {
-       
+        
         void HandleCoilsChanged(byte slaveId, int coil, int numberOfPoints, ModbusServer tcpServer, ClientHandler rtuClient, Dictionary<byte, ModbusSlaveDevice> slaveDevices);
         void HandleHoldingRegistersChanged(byte slaveId, int register, int numberOfPoints, ModbusServer tcpServer, ClientHandler rtuClient, Dictionary<byte, ModbusSlaveDevice> slaveDevices);
         void ReadHoldingRegisters(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server);

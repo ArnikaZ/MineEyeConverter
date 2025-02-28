@@ -2,7 +2,7 @@
 <Configuration>
 	<Instances>
 		<Instance name="Przenosnik15">
-			<OperationMode>manual</OperationMode>
+			<OperationMode>auto</OperationMode>
 			<ListeningPort>503</ListeningPort>
 			<ConnectionType>RtuOverTcp</ConnectionType>
 			<RtuSettings>

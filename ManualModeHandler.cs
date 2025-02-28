@@ -12,109 +12,13 @@ namespace MineEyeConverter
     public class ManualModeHandler : IOperationModeHandler
     {
         private RegisterManager registerManager;
-
-        // Flag dla poszczególnych komunikatów:
-        private bool holdingNotFoundMessagePrinted = false;
-        private bool inputNotFoundMessagePrinted = false;
-        private bool coilNotFoundMessagePrinted = false;
-
-      
+        private HashSet<string> _reportedErrorMessages = new HashSet<string>();
+        private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public ManualModeHandler()
         {
             registerManager = RegisterManager.Instance;
             registerManager.LoadFromFile("registers.xml");
         }
-
-        //public void Synchronize(ModbusSlaveDevice slave, ModbusServer tcpServer)
-        //{
-            
-        //    var holdingRegister = registerManager.HoldingRegisters.FirstOrDefault(r =>
-        //        r.SlaveId == slave.UnitId &&
-        //        r.IsActive &&
-        //        (tcpServer.LastStartingAddress >= r.StartAddress &&
-        //        tcpServer.LastStartingAddress < r.StartAddress + r.Quantity) &&
-        //        r.functionCode == tcpServer.FunctionCode);
-           
-            
-        //    if (holdingRegister != null)
-        //    {
-        //        holdingNotFoundMessagePrinted = false;
-        //        for (ushort i = holdingRegister.StartAddress; i < holdingRegister.StartAddress + holdingRegister.Quantity; i++)
-        //        {
-        //            if (i < tcpServer.holdingRegisters.localArray.Length && i < slave.HoldingRegisters.Length)
-        //            {
-        //                tcpServer.holdingRegisters[i+1] = (short)slave.HoldingRegisters[i];
-                   
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        if (!holdingNotFoundMessagePrinted)
-        //        {
-        //            Console.WriteLine("Nie znaleziono odpowiadającego rejestru holding");
-                    
-        //            holdingNotFoundMessagePrinted = true;
-                    
-        //        }
-        //    }
-
-
-        //    var inputRegister = registerManager.InputRegisters.FirstOrDefault(r =>
-        //    r.SlaveId == slave.UnitId &&
-        //    r.IsActive &&
-        //    (tcpServer.LastStartingAddress >= r.StartAddress &&
-        //    tcpServer.LastStartingAddress < r.StartAddress + r.Quantity) &&
-        //    r.functionCode == tcpServer.FunctionCode);
-
-
-        //    if (inputRegister != null)
-        //    {
-        //        inputNotFoundMessagePrinted = false;
-        //        for (ushort i = inputRegister.StartAddress; i < inputRegister.StartAddress + inputRegister.Quantity; i++)
-        //        {
-        //            if (i < tcpServer.inputRegisters.localArray.Length && i < slave.InputRegisters.Length)
-        //            {
-        //                tcpServer.inputRegisters[i+1] = (short)slave.InputRegisters[i];
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        if (!inputNotFoundMessagePrinted)
-        //        {
-        //            Console.WriteLine("Nie znaleziono odpowiadającego rejestru input");
-        //            inputNotFoundMessagePrinted = true;
-        //        }
-        //    }
-
-        //    var coilRegister = registerManager.Coils.FirstOrDefault(r =>
-        //    r.SlaveId == slave.UnitId &&
-        //    r.IsActive &&
-        //    (tcpServer.LastStartingAddress >= r.StartAddress &&
-        //    tcpServer.LastStartingAddress < r.StartAddress + r.Quantity) &&
-        //    r.functionCode == tcpServer.FunctionCode);
-
-        //    if (coilRegister != null)
-        //    {
-        //        coilNotFoundMessagePrinted = false;
-        //        for (ushort i = coilRegister.StartAddress; i < coilRegister.StartAddress + coilRegister.Quantity; i++)
-        //        {
-        //            if (i < tcpServer.coils.localArray.Length && i < slave.Coils.Length)
-        //            {
-        //                tcpServer.coils[i+1] = slave.Coils[i];
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        if (!coilNotFoundMessagePrinted)
-        //        {
-        //            Console.WriteLine("Nie znaleziono odpowiadającego coil");
-        //            coilNotFoundMessagePrinted = true;
-        //        }
-        //    }
-        //}
 
         public void HandleCoilsChanged(byte slaveId, int coil, int numberOfPoints, ModbusServer tcpServer, ClientHandler rtuClient, Dictionary<byte, ModbusSlaveDevice> slaveDevices)
         {
@@ -139,14 +43,14 @@ namespace MineEyeConverter
                     if (slaveDevices.ContainsKey(slaveId))
                     {
                         rtuClient.WriteMultipleCoils(slaveId, (ushort)(coil-1), values);
-                        Console.WriteLine($"[Manual] Przesłano zmianę cewek do urządzenia {slaveId}, początkowy adres: {coil}, liczba punktów: {numberOfPoints}");
+                        _log.DebugFormat("Transferred coils change to device {0}, starting address: {1}, number of points: {2}", slaveId, coil, numberOfPoints);
                     }
                    
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Manual] Błąd podczas obsługi zmiany cewek: {ex.Message}");
+                _log.Error(ex);
             }
         }
 
@@ -170,47 +74,130 @@ namespace MineEyeConverter
                     if (slaveDevices.ContainsKey(slaveId))
                     {
                         rtuClient.WriteMultipleRegisters(slaveId, (ushort)(register-1), values);
-                        Console.WriteLine($"[Manual] Przesłano zmianę rejestrów do urządzenia {slaveId}, początkowy adres: {register}, liczba rejestrów: {numberOfPoints}");
+                        _log.DebugFormat("Transferred holding registers change to device {0}, starting address: {1}, number of registers: {2}", slaveId, slaveId, numberOfPoints);
                     }
                    
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Manual] Błąd podczas obsługi zmiany rejestrów: {ex.Message}");
+                _log.Error(ex);
             }
         }
 
         public void ReadHoldingRegisters(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
         {
-            for (ushort start = server.LastStartingAddress; start < (server.LastQuantity+server.LastStartingAddress); start += 125)
+
+            for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity + server.LastStartingAddress); startAddress += 125)
             {
-                ushort regsToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - server.LastStartingAddress);
-                var holdingData = master.ReadHoldingRegisters(slave.UnitId, start, regsToRead);
-                Array.Copy(holdingData, 0, slave.HoldingRegisters, start, regsToRead);
-                Array.Copy(holdingData, 0, server.holdingRegisters.localArray, start, regsToRead);
+                // Obliczenie ile rejestrów zostało do końca
+                ushort registersToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
+                try
+                {
+                    var data = master.ReadHoldingRegisters(slave.UnitId, startAddress, registersToRead);
+                    Array.Copy(data, 0, slave.HoldingRegisters, startAddress, registersToRead);
+                    int offset = slave.UnitId * 10000;
+                    Array.Copy(slave.HoldingRegisters, server.LastStartingAddress,
+                        server.holdingRegisters.localArray, offset + server.LastStartingAddress,
+                        server.LastQuantity);
+                }
+                catch (NModbus.SlaveException ex)
+                {
+                    string errorKey = $"Holding_{slave.UnitId}_{startAddress}_{registersToRead}";
+                    if (!_reportedErrorMessages.Contains(errorKey))
+                    {
+                        _log.Error($"Holding registers {startAddress}-{startAddress + registersToRead - 1} are not available for device {slave.UnitId}");
+                        _reportedErrorMessages.Add(errorKey);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    string errorKey = $"General_{slave.UnitId}_{ex.Message}";
+                    if (!_reportedErrorMessages.Contains(errorKey))
+                    {
+                        _log.ErrorFormat("Error reading holding registers for device {0}: {1}", slave.UnitId, ex.Message);
+                        _reportedErrorMessages.Add(errorKey);
+                    }
+                }
+            }
+
+        }
+        public void ReadInputRegisters(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
+        {
+            try
+            {
+                for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity + server.LastStartingAddress); startAddress += 125)
+                {
+                    ushort registersToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
+                    try
+                    {
+                        var data = master.ReadInputRegisters(slave.UnitId, startAddress, registersToRead);
+                        Array.Copy(data, 0, slave.InputRegisters, startAddress, registersToRead);
+                        int offset = slave.UnitId * 10000;
+                        Array.Copy(slave.InputRegisters, server.LastStartingAddress,
+                            server.inputRegisters.localArray, offset + server.LastStartingAddress,
+                            server.LastQuantity);
+                    }
+                    catch (NModbus.SlaveException ex)
+                    {
+
+                        string errorKey = $"Input_{slave.UnitId}_{startAddress}_{registersToRead}";
+                        if (!_reportedErrorMessages.Contains(errorKey))
+                        {
+                            _log.ErrorFormat($"Input registers {startAddress}-{startAddress + registersToRead - 1} are not available for device {slave.UnitId}");
+                            _reportedErrorMessages.Add(errorKey);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                string errorKey = $"General_{slave.UnitId}_{ex.Message}";
+                if (!_reportedErrorMessages.Contains(errorKey))
+                {
+                    _log.ErrorFormat("Error reading input registers for device {0}: {1}", slave.UnitId, ex.Message);
+                    _reportedErrorMessages.Add(errorKey);
+                }
             }
         }
-
-        public void ReadInputRegisters(ModbusSlaveDevice slave, IModbusMaster master,  ModbusServer server)
+        public void ReadCoils(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
         {
-            for (ushort start = server.LastStartingAddress; start < (server.LastQuantity+server.LastStartingAddress); start += 125)
+            try
             {
-                ushort regsToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - server.LastStartingAddress);
-                var inputData = master.ReadInputRegisters(slave.UnitId, start, regsToRead);
-                Array.Copy(inputData, 0, slave.InputRegisters, start, regsToRead);
-                Array.Copy(inputData, 0, server.inputRegisters.localArray, start, regsToRead);
+                for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity + server.LastStartingAddress); startAddress += 125)
+                {
+                    ushort coilsToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
+                    try
+                    {
+                        var data = master.ReadCoils(slave.UnitId, startAddress, coilsToRead);
+                        Array.Copy(data, 0, slave.Coils, startAddress, coilsToRead);
+                        int offset = slave.UnitId * 10000;
+                        Array.Copy(slave.Coils, server.LastStartingAddress,
+                            server.coils.localArray, offset + server.LastStartingAddress,
+                            server.LastQuantity);
+                    }
+                    catch (NModbus.SlaveException ex)
+                    {
+
+                        string errorKey = $"Coils{slave.UnitId}_{startAddress}_{coilsToRead}";
+                        if (!_reportedErrorMessages.Contains(errorKey))
+                        {
+                            _log.ErrorFormat($"Coils {startAddress}-{startAddress + coilsToRead - 1} are not available for device {slave.UnitId}");
+                            _reportedErrorMessages.Add(errorKey);
+                        }
+                    }
+
+
+                }
             }
-        }
-
-        public void ReadCoils(ModbusSlaveDevice slave, IModbusMaster master,  ModbusServer server)
-        {
-            for (ushort start = server.LastStartingAddress; start < (server.LastQuantity+server.LastStartingAddress); start += 2000)
+            catch (Exception ex)
             {
-                ushort coilsToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - server.LastStartingAddress);
-                var coilsData = master.ReadCoils(slave.UnitId, start, coilsToRead);
-                Array.Copy(coilsData, 0, slave.Coils, start, coilsToRead);
-                Array.Copy(coilsData, 0, server.coils.localArray, start, coilsToRead);
+                string errorKey = $"General_{slave.UnitId}_{ex.Message}";
+                if (!_reportedErrorMessages.Contains(errorKey))
+                {
+                    _log.ErrorFormat("Error reading coils from device {0}: {1}", slave.UnitId, ex.Message);
+                    _reportedErrorMessages.Add(errorKey);
+                }
             }
         }
         public void WriteSingleRegister(IModbusMaster master, byte address, ushort startRegister, ushort value)
@@ -227,13 +214,12 @@ namespace MineEyeConverter
                 }
                 else
                 {
-                    Console.WriteLine($"Brak aktywnego rejestru o adresie {startRegister} z uprawnieniami W dla slave {address}.");
-                    
+                    _log.ErrorFormat("No active register at address {0} with write permissions for slave {1}", startRegister, address);
                 }
             }
             catch(Exception ex)
             {
-                Console.WriteLine("Wystąpił błąd podczas próby zapisu rejestru: " + ex.Message);
+                _log.Error(ex);
             }
      
         }
@@ -254,7 +240,7 @@ namespace MineEyeConverter
 
                     if (register == null)
                     {
-                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} z uprawnieniami W dla slave {address}.");
+                        _log.ErrorFormat("No active register at address {0} with write permissions for slave {1}", startRegister, address);
                         return;
                     }
                 }
@@ -263,7 +249,7 @@ namespace MineEyeConverter
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Wystąpił błąd podczas próby zapisu rejestrów: " + ex.Message);
+                _log.Error(ex);
             }
         }
 
@@ -281,12 +267,12 @@ namespace MineEyeConverter
                 }
                 else
                 {
-                    Console.WriteLine($"Brak aktywnego rejestru o adresie {startRegister} z uprawnieniami W dla slave {address}.");
+                    _log.ErrorFormat("No active register at address {0} with write permissions for slave {1}", startRegister, address);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Wystąpił błąd podczas próby zapisu rejestru: " + ex.Message);
+                _log.Error(ex);
             }
 
         }
@@ -307,7 +293,7 @@ namespace MineEyeConverter
 
                     if (register == null)
                     {
-                        Console.WriteLine($"Brak aktywnego rejestru o adresie {currentAddress} z uprawnieniami W dla slave {address}.");
+                        _log.ErrorFormat("No active register at address {0} with write permissions for slave {1}", startRegister, address);
                         return;
                     }
                 }
@@ -316,7 +302,7 @@ namespace MineEyeConverter
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Wystąpił błąd podczas próby zapisu rejestrów: " + ex.Message);
+                _log.Error(ex);
             }
         }
     }

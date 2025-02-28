@@ -85,6 +85,7 @@ namespace MineEyeConverter
         {
             Communicate = false;
             isConnected = false;
+            Log.Info("Communication stopped");
         }
 
         public void Start()
@@ -110,9 +111,7 @@ namespace MineEyeConverter
                         tcpClient = new TcpClient(provider.Ip, provider.Port);
                         _tcpClientAdapter = new TcpClientAdapter(tcpClient);
                         master = factory.CreateRtuMaster(_tcpClientAdapter);
-
-                        
-                        Log.Debug(provider.Ip + " " + provider.Port);
+                        Log.DebugFormat("TCP connection established with {0} : {1}", provider.Ip, provider.Port);
                     }
                     else
                     {
@@ -126,10 +125,12 @@ namespace MineEyeConverter
                             serialPort.Open();
                             var transport = factory.CreateRtuTransport(_serialPortAdapter);
                             master = factory.CreateMaster(transport);
+                            Log.DebugFormat("Serial port {0} opened", provider1.SerialName);
                         }
                     }
                     if (master is null)
                     {
+                        Log.Warn("Master is null, retrying connection in 5 seconds.");
                         isConnected = false;
                         Task.Delay(5000).Wait();
                         continue;
@@ -145,79 +146,74 @@ namespace MineEyeConverter
                     {
                         try
                         {
-                            //foreach(var slave in SlaveList)
-                                var slave = SlaveList.FirstOrDefault(s => s.UnitId == _server.CurrentUnitIdentifier);
+                            var slave = SlaveList.FirstOrDefault(s => s.UnitId == _server.CurrentUnitIdentifier);
                             if (slave != null)
                                 try
                                 {
-                                    try
+                                    switch (_server.FunctionCode)
                                     {
-                                        
-                                        operationModeHandler.ReadHoldingRegisters(slave, master, _server);
-                                        
-                                        
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Log.Error($"Error reading holding registers from device {slave.UnitId}: {ex.Message}");
-                                    }
+                                        case 3:
+                                            try
+                                            {
+                                                operationModeHandler.ReadHoldingRegisters(slave, master, _server);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                Log.ErrorFormat("Error reading holding registers from device {0}: {1}", slave.UnitId, ex.Message);
+                                            }
+                                            break;
+                                        case 4:
+                                            try
+                                            {
+                                                operationModeHandler.ReadInputRegisters(slave, master, _server);
 
-                                    try
-                                    {
-                                        operationModeHandler.ReadInputRegisters(slave, master, _server);
-                                        
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                Log.ErrorFormat("Error reading input registers from device {0}: {1}", slave.UnitId, ex.Message);
+                                            }
+                                            break;
+                                        case 1:
+                                            try
+                                            {
+                                                operationModeHandler.ReadCoils(slave, master, _server);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                Log.ErrorFormat("Error reading coils from device {0}: {1}", slave.UnitId, ex.Message);
+                                            }
+                                            break;
                                     }
-                                    catch (Exception ex)
-                                    {
-                                        Log.Error($"Error reading input registers from device {slave.UnitId}: {ex.Message}");
-                                    }
-
-                                    try
-                                    {
-                                        operationModeHandler.ReadCoils(slave, master, _server);
-                                        
-
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Log.Error($"Error reading coils from device {slave.UnitId}: {ex.Message}");
-                                        Console.WriteLine($" Błąd podczas odczytu cewek: {ex.Message}");
-                                    }
-
+                                    
                                     // przerwa między odczytami kolejnego urządzenia
                                     Task.Delay(100).Wait();
                                 }
                                 catch (Exception slaveEx)
                                 {
-                                    Log.Error($"Error communicating with slave {slave.UnitId}: {slaveEx.Message}");
+                                    Log.ErrorFormat("Error communicating with slave {0}: {1}", slave.UnitId, slaveEx.Message);
                                     isConnected = false;
                                     break;
                                 }
-
-
                             // Przerwa między pełnymi cyklami odczytu
                             Task.Delay(250).Wait();
                         }
                         catch (Exception mainEx)
                         {
                             isConnected = false;
-                            Log.Error($"Main loop error: {mainEx.Message}");
+                            Log.Error(mainEx);
                             Task.Delay(1000).Wait();
                         }
                     }
                 }
                 catch (Exception exc)
                 {
-                    Log.Error(exc.Message);
+                    Log.Error(exc);
                 }
                 Task.Delay(5000).Wait();
-
             }
-        
         }
 
 
-   
         public bool WriteRegister(byte address, ushort startRegister, ushort value)
         {
             try

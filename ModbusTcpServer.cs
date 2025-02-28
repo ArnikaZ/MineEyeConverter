@@ -30,23 +30,19 @@ namespace MineEyeConverter
         public ModbusTcpServer(string instanceName, bool useWhiteList=false)
         {
 
-          
+            _log.InfoFormat("Initializing Modbus server for instance '{0}'", instanceName);
             _config = ConfigLoader.LoadConfiguration("config.xml");
             var instanceConfig = _config.Instances.FirstOrDefault(i => string.Equals(i.Name, instanceName, StringComparison.OrdinalIgnoreCase));
             if (instanceConfig == null)
             {
-                Console.WriteLine($"Nie znaleziono instancji '{instanceName}' w konfiguracji.");
+                _log.ErrorFormat("Instance '{0}' not found in configuration", instanceName);
             }
             int listeningPort = instanceConfig.ListeningPort;
             string connectionType = instanceConfig.ConnectionType;
             RtuSettings rtuSettings = instanceConfig.RtuSettings;
-            
             modbusClientAccounts = instanceConfig.ClientWhiteList.Clients;
-            // Odczyt trybu pracy z konfiguracji
             string operationMode = instanceConfig.OperationMode;
-            
-
-            // Wybór handlera trybu na podstawie konfiguracji
+            _log.InfoFormat("Operation mode: {0}", operationMode);
             switch (operationMode.ToLower())
             {
                 case "auto":
@@ -56,12 +52,10 @@ namespace MineEyeConverter
                     operationModeHandler = new ManualModeHandler();
                     break;
                 default:
-                    Console.WriteLine("Nieznany tryb pracy: " + operationMode);
+                    _log.ErrorFormat("Unknown operation mode {0}", operationMode);
                     break;
             }
 
-
-            // Konfiguracja serwera TCP
             _tcpServer = new ModbusServer
             {
                 LocalIPAddress = IPAddress.Any,
@@ -79,18 +73,10 @@ namespace MineEyeConverter
             };
 
 
-
-
-
-
-            // Konfiguracja klienta RTU
             if (connectionType.Equals("COM", StringComparison.OrdinalIgnoreCase))
             {
-
                 _rtuClient = new ClientHandler(operationModeHandler, _tcpServer)
                 {
-                    
-                    
                     SerialDataProvider = new SerialProvider
                     {
                         SerialName = rtuSettings.PortName,
@@ -114,12 +100,11 @@ namespace MineEyeConverter
             }
             else
             {
-                Console.WriteLine($"Nieobsługiwany typ połączenia: {connectionType}");
+                _log.ErrorFormat("Unsupported connection type: {0}", connectionType);
             }
 
 
             _slaveDevices = new Dictionary<byte, ModbusSlaveDevice>();
-            //wczytanie urządzeń slave dla danej instancji
             if (instanceConfig.SlaveDeviceList != null && instanceConfig.SlaveDeviceList.Slaves != null)
             {
                 foreach (var slaveConfig in instanceConfig.SlaveDeviceList.Slaves)
@@ -128,20 +113,16 @@ namespace MineEyeConverter
                     AddSlaveDevice(unitId);
                 }
             }
-
-
-
-
-
-            // Podpięcie handlerów zdarzeń dla serwera TCP
+            else
+            {
+                _log.Warn("No slave devices configuration found.");
+            }
 
             _tcpServer.CoilsChanged += HandleCoilsChanged;
             _tcpServer.HoldingRegistersChanged += HandleHoldingRegistersChanged;
             _tcpServer.NumberOfConnectedClientsChanged += HandleClientConnectionChanged;
-
             _tcpServer.OperationModeHandler = operationModeHandler;
             
-
         }
 
         private Parity ParseParity(string parity)
@@ -175,25 +156,15 @@ namespace MineEyeConverter
 
         public void Start()
         {
-            if (_isRunning) //jeśli już uruchomiona, to kończy działanie
+            if (_isRunning)
                 return;
 
             _isRunning = true;
-
-            // Uruchomienie serwera TCP
             _tcpServer.Listen();
             
-            
-            
-            Console.WriteLine($"Serwer TCP nasłuchuje na porcie {_tcpServer.Port}");
-            _log.Info($"Serwer TCP nasłuchuje na porcie {_tcpServer.Port}");
-
-
-
-            // Uruchomienie klienta RTU w osobnym wątku
+            _log.InfoFormat("TCP server is listening on port {0}", _tcpServer.Port);
             Task.Run(() => _rtuClient.Start());
           
-           
         }
 
         public void Stop()
@@ -204,7 +175,7 @@ namespace MineEyeConverter
             _isRunning = false;
             _tcpServer.StopListening();
             _rtuClient.Stop();
-            _log.Info("Zatrzymano bridge TCP/RTU");
+            _log.Info("Server stopped");
         }
         //Metoda jest wywoływana gdy zmienią się stany cewek w ModbusPoll
         //coil: adres pierwszej zmienionej cewki
@@ -223,8 +194,7 @@ namespace MineEyeConverter
             }
             catch (Exception ex)
             {
-                _log.Error($"Błąd podczas obsługi zmiany coils: {ex.Message}");
-                Console.WriteLine($"Błąd podczas obsługi zmiany coils: {ex.Message}");
+                _log.ErrorFormat("Error handling coils change: {0}", ex.Message);
             }
         }
 
@@ -242,8 +212,7 @@ namespace MineEyeConverter
             }
             catch (Exception ex)
             {
-                _log.Error($"Błąd podczas obsługi zmiany rejestrów: {ex.Message}");
-                Console.WriteLine($"Błąd podczas obsługi zmiany rejestrów: {ex.Message}");
+                _log.ErrorFormat("Error handling holding registers change: {0}", ex.Message);
             }
         }
 
@@ -253,14 +222,10 @@ namespace MineEyeConverter
             if (currentCount != _previousConnectionCount)
             {
                 _previousConnectionCount = currentCount;
-                _log.Info($"Zmiana liczby połączonych klientów TCP. Aktualna liczba: {currentCount}");
+                _log.InfoFormat("ZTCP client connection count changed. Current count: {0}", currentCount);
             }
-
-
-
         }
 
-       
 
         public void Dispose()
         {

@@ -20,13 +20,13 @@ namespace MineEyeConverter
         {
             Configuration _config = ConfigLoader.LoadConfiguration("config.xml");
             var instanceConfig = _config.Instances.FirstOrDefault(i => string.Equals(i.Name, instanceName, StringComparison.OrdinalIgnoreCase));
-            string operationMode = instanceConfig.OperationMode;
-            if (operationMode=="Auto" || operationMode == "Manual")
+            string operationMode = instanceConfig.OperationMode.ToLower();
+            if (operationMode=="auto" || operationMode == "manual")
             {
                 server = new ModbusTcpServer(instanceName, true);
                 server.Start();
             }
-            else if (operationMode == "Learning")
+            else if (operationMode == "learning")
             {
                 LearningModeHandler lm = new LearningModeHandler(instanceName);
                 List<SlaveConfiguration> discoveredConfigs = lm.DiscoverSlaves();

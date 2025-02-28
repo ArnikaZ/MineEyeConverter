@@ -22,50 +22,53 @@ namespace MineEyeConverter
         
         static void Main(string[] args)
         {
-            // _log.Info("Application starting");
-            // var config = new ConfigurationBuilder()
-            //.SetBasePath(AppContext.BaseDirectory)
-            //.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            //.AddCommandLine(args)
-            //.Build();
-
-            // _log.Info($"Configuration loaded succesfully");
-
-            // var instanceName = config["Service:Name"] ?? config["name"];
-            // var serviceDescription = config["Service:Description"] ?? "TCP <=> RTU Converter";
-
-            // var exitCode = HostFactory.Run(x =>
-            // {
-            //     x.AddCommandLineDefinition("name", f => { instanceName = f; });
-            //     x.ApplyCommandLine();
-            //     x.Service<ModbusService>(s =>
-            //     {
-            //         s.ConstructUsing(modbusService => new ModbusService(instanceName));
-            //         s.WhenStarted(modbusService => modbusService.Start());
-            //         s.WhenStopped(modbusService => modbusService.Stop());
-            //     });
-
-            //     x.RunAsLocalSystem();
-            //     x.SetServiceName(instanceName);
-            //     x.SetDisplayName(instanceName);
-            //     x.SetDescription(serviceDescription);
-            //     x.StartAutomatically();
-            // });
+            
+            var config = new ConfigurationBuilder()
+           .SetBasePath(AppContext.BaseDirectory)
+           .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+           .AddCommandLine(args)
+           .Build();
 
 
-            // int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
-            // Environment.ExitCode = exitCodeValue;
+            var instanceName = config["Service:Name"] ?? config["name"];
+            var serviceDescription = config["Service:Description"] ?? "TCP <=> RTU Converter";
+
+            var exitCode = HostFactory.Run(x =>
+            {
+                x.AddCommandLineDefinition("name", f => { instanceName = f; });
+                x.ApplyCommandLine();
+                x.Service<ModbusService>(s =>
+                {
+                    s.ConstructUsing(modbusService => new ModbusService(instanceName));
+                    s.WhenStarted(modbusService => modbusService.Start());
+                    s.WhenStopped(modbusService => modbusService.Stop());
+                });
+
+                x.RunAsLocalSystem();
+                x.SetServiceName(instanceName);
+                x.SetDisplayName(instanceName);
+                x.SetDescription(serviceDescription);
+                x.StartAutomatically();
+            });
+
+
+            int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
+            Environment.ExitCode = exitCodeValue;
 
 
 
             //z konsoli
-            var server = new ModbusTcpServer("Przenosnik15", false);
-            server.Start();
+            //var server = new ModbusTcpServer("Przenosnik15", false);
+            //server.Start();
+            //Console.WriteLine("Naciśnij dowolny klawisz, aby zakończyć...");
+            //Console.ReadKey();
+            //server.Stop();
 
-            Console.WriteLine("Naciśnij dowolny klawisz, aby zakończyć...");
-            Console.ReadKey();
+            //LearningModeHandler lm = new LearningModeHandler("Przenosnik15");
+            //List<SlaveConfiguration> discoveredConfigs = lm.DiscoverSlaves();
+            //lm.SaveConfigurationToXml(discoveredConfigs);
+            //Console.ReadKey();
 
-            server.Stop();
 
         }
 
@@ -75,12 +78,3 @@ namespace MineEyeConverter
 }
 
 
-
-
-//    //LearningModeHandler lm = new LearningModeHandler("Szyb1Poziom950Przenosnik2");
-//    //List<SlaveConfiguration> discoveredConfigs = lm.DiscoverSlaves();
-//    //lm.SaveConfigurationToXml(discoveredConfigs);
-//    //Console.ReadKey();
-
-
-//}
