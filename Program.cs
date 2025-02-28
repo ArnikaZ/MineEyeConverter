@@ -59,7 +59,7 @@ namespace MineEyeConverter
 
 
             //z konsoli
-            var server = new ModbusTcpServer("Przenosnik14", false);
+            var server = new ModbusTcpServer("Przenosnik15", false);
             server.Start();
 
             Console.WriteLine("Naciśnij dowolny klawisz, aby zakończyć...");

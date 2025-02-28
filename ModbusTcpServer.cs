@@ -14,15 +14,14 @@ namespace MineEyeConverter
     public class ModbusTcpServer
     {
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private ModbusServer _tcpServer; //przez serwer przychodzą żądania od klientów TCP/IP
-        private ClientHandler _rtuClient; //obiekt odpowiedzialny za komunikację z urządzeniami Modbus RTU
+        private ModbusServer _tcpServer; 
+        private ClientHandler _rtuClient; 
         private readonly Dictionary<byte, ModbusSlaveDevice> _slaveDevices; //klucz - adres urządzenia, wartość - obiekt slave
-        private bool _isRunning; //czy gateway jest aktualnie uruchomiony
+        private bool _isRunning; 
         private readonly object _syncLock = new object();
         public readonly Configuration _config;
 
         public IOperationModeHandler operationModeHandler;
-        //ClientWhiteList whiteList;
         private List<Client> modbusClientAccounts { get; set; }
         private int _previousConnectionCount = -1;
 
@@ -261,48 +260,7 @@ namespace MineEyeConverter
 
         }
 
-        
-        //private async Task SynchronizeRegisters()
-        //{
-        //    while (_isRunning)
-        //    {
-                
-        //            try
-        //            {
-        //                _rtuClient.UpdateParameters(_tcpServer.CurrentUnitIdentifier,
-        //                                    _tcpServer.LastStartingAddress,
-        //                                    _tcpServer.LastQuantity);
-
-        //                if (_slaveDevices.TryGetValue(_tcpServer.CurrentUnitIdentifier, out ModbusSlaveDevice slave))
-        //                {
-
-        //                    try
-        //                    {
-        //                        operationModeHandler.Synchronize(slave, _tcpServer);
-
-        //                    }
-
-
-
-        //                    catch (Exception ex)
-        //                    {
-        //                        Console.WriteLine($"Błąd w synchronizacji danych dla slave {slave.UnitId}: {ex.Message}");
-
-        //                    }
-
-        //                    // Poczekaj przed następną synchronizacją
-        //                    await Task.Delay(100); // Synchronizacja co 100ms
-        //                }
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                _log.Error($"Błąd podczas synchronizacji: {ex.Message}");
-        //                await Task.Delay(1000); // W przypadku błędu, poczekaj dłużej
-        //            }
-                
-        //    }
-        //}
-
+       
 
         public void Dispose()
         {

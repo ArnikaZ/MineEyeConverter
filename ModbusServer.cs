@@ -1041,7 +1041,14 @@ namespace EasyModbus
 
                 sendData.sendCoilValues = new bool[receiveData.quantity];
                 lock (lockCoils)
-                    Array.Copy(coils.localArray, receiveData.startingAdress + 1, sendData.sendCoilValues, 0, receiveData.quantity);
+                {
+                    int offset = receiveData.unitIdentifier * 10000;
+                    Buffer.BlockCopy(coils.localArray,
+                        offset + receiveData.startingAdress,
+                        sendData.sendCoilValues, 0,
+                        receiveData.quantity);
+                }
+                   // Array.Copy(coils.localArray, receiveData.startingAdress + 1, sendData.sendCoilValues, 0, receiveData.quantity);
             }
             if (true)
             {
@@ -1269,6 +1276,7 @@ namespace EasyModbus
 
         private void ReadHoldingRegisters(ModbusProtocol receiveData, ModbusProtocol sendData, NetworkStream stream, int portIn, IPAddress ipAddressIn)
         {
+            
             sendData.response = true;
 
             sendData.transactionIdentifier = receiveData.transactionIdentifier;
@@ -1291,7 +1299,15 @@ namespace EasyModbus
                 sendData.byteCount = (byte)(2 * receiveData.quantity);
                 sendData.sendRegisterValues = new Int16[receiveData.quantity];
                 lock (lockHoldingRegisters)
-                    Buffer.BlockCopy(holdingRegisters.localArray, receiveData.startingAdress * 2 + 2, sendData.sendRegisterValues, 0, receiveData.quantity * 2);
+                {
+                    int offset = receiveData.unitIdentifier * 10000;
+                    Buffer.BlockCopy(holdingRegisters.localArray,
+                        (offset + receiveData.startingAdress) * 2 ,
+                        sendData.sendRegisterValues, 0,
+                        receiveData.quantity * 2);
+                }
+                   // Buffer.BlockCopy(holdingRegisters.localArray, receiveData.startingAdress * 2 + 2, sendData.sendRegisterValues, 0, receiveData.quantity * 2);
+                
             }
                 if (sendData.exceptionCode > 0)
                     sendData.length = 0x03;
@@ -1406,7 +1422,13 @@ namespace EasyModbus
             {
                 sendData.byteCount = (byte)(2 * receiveData.quantity);
                 sendData.sendRegisterValues = new Int16[receiveData.quantity];
-                Buffer.BlockCopy(inputRegisters.localArray, receiveData.startingAdress * 2 + 2, sendData.sendRegisterValues, 0, receiveData.quantity * 2);
+
+                int offset = receiveData.unitIdentifier * 10000;
+                Buffer.BlockCopy(inputRegisters.localArray,
+                    (offset + receiveData.startingAdress) * 2,
+                    sendData.sendRegisterValues, 0,
+                    receiveData.quantity * 2);
+               // Buffer.BlockCopy(inputRegisters.localArray, receiveData.startingAdress * 2 + 2, sendData.sendRegisterValues, 0, receiveData.quantity * 2);
             }
                 if (sendData.exceptionCode > 0)
                     sendData.length = 0x03;
@@ -1654,7 +1676,7 @@ namespace EasyModbus
             if (sendData.exceptionCode == 0)
             {
                 lock (lockHoldingRegisters)
-                    holdingRegisters[receiveData.startingAdress + 1] = unchecked((short)receiveData.receiveRegisterValues[0]);
+                    holdingRegisters[receiveData.startingAdress+1 ] = unchecked((short)receiveData.receiveRegisterValues[0]);
             }
                 if (sendData.exceptionCode > 0)
                     sendData.length = 0x03;

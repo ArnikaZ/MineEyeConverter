@@ -31,10 +31,11 @@ namespace MineEyeConverter
             if (slaveDevices.ContainsKey(slaveId))
             {
                 // Zapisz do urządzenia RTU
-                rtuClient.WriteMultipleCoils(slaveId, (ushort)(coil-1 ), values);
+                rtuClient.WriteMultipleCoils(slaveId, (ushort)(coil-1), values);
                 //log.Debug($"Przesłano zmianę coils do urządzenia {slaveId}, adres początkowy: {coil}, liczba punktów: {numberOfPoints}");
                 Console.WriteLine($"[Auto] Przesłano zmianę coils do urządzenia {slaveId}, adres początkowy: {coil}, liczba punktów: {numberOfPoints}");
             }
+         
         }
         public void HandleHoldingRegistersChanged(byte slaveId, int register, int numberOfPoints, ModbusServer tcpServer, ClientHandler rtuClient, Dictionary<byte, ModbusSlaveDevice> slaveDevices)
         {
@@ -53,23 +54,29 @@ namespace MineEyeConverter
                 Console.WriteLine($"[Auto] Przesłano zmianę rejestrów do urządzenia {slaveId}, adres początkowy: {register}, liczba rejestrów: {numberOfPoints}");
                 
             }
+           
         }
 
         public void ReadHoldingRegisters(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
         {
-                // Czytanie po 125 rejestrów na raz (ograniczenie protokołu Modbus)
-                for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity + server.LastStartingAddress); startAddress += 125)
+            
+            // Czytanie po 125 rejestrów na raz (ograniczenie protokołu Modbus)
+            for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity + server.LastStartingAddress); startAddress += 125)
                 {
                     // Obliczenie ile rejestrów zostało do końca
                     ushort registersToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
                  var data=master.ReadHoldingRegisters(slave.UnitId, server.LastStartingAddress, registersToRead);
                 // Kopiowanie odczytane dane do tablicy
                 Array.Copy(data, 0, slave.HoldingRegisters, startAddress, registersToRead);
+
+                int offset = slave.UnitId * 10000;
                 Array.Copy(slave.HoldingRegisters, server.LastStartingAddress,
-           server.holdingRegisters.localArray, server.LastStartingAddress,
-           server.LastQuantity);
+                    server.holdingRegisters.localArray, offset + server.LastStartingAddress,
+                    server.LastQuantity);
+                
             }
             
+
         }
         public void ReadInputRegisters(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
         {
@@ -78,8 +85,12 @@ namespace MineEyeConverter
                 ushort registersToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
                 var data= master.ReadInputRegisters(slave.UnitId, startAddress, registersToRead);
                 Array.Copy(data, 0, slave.InputRegisters, startAddress, registersToRead);
-               Array.Copy(data, 0, server.inputRegisters.localArray, startAddress, registersToRead);
+                int offset = slave.UnitId * 10000;
+                Array.Copy(slave.InputRegisters, server.LastStartingAddress,
+                    server.inputRegisters.localArray, offset + server.LastStartingAddress,
+                    server.LastQuantity);
             }
+           
         }
         public void ReadCoils(ModbusSlaveDevice slave, IModbusMaster master, ModbusServer server)
         {
@@ -89,9 +100,13 @@ namespace MineEyeConverter
                 
                 var data=master.ReadCoils(slave.UnitId, startAddress, coilsToRead);
                 Array.Copy(data, 0, slave.Coils, startAddress, coilsToRead);
-                Array.Copy(data, 0, server.coils.localArray, startAddress, coilsToRead);
+                int offset = slave.UnitId * 10000;
+                Array.Copy(slave.Coils, server.LastStartingAddress,
+                    server.coils.localArray, offset + server.LastStartingAddress,
+                    server.LastQuantity);
 
             }
+            
         }
         public void WriteSingleRegister(IModbusMaster master, byte address, ushort startRegister, ushort value)
         {

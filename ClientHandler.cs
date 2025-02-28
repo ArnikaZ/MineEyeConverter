@@ -145,7 +145,8 @@ namespace MineEyeConverter
                     {
                         try
                         {
-                            var slave = SlaveList.FirstOrDefault(s => s.UnitId == _server.CurrentUnitIdentifier);
+                            //foreach(var slave in SlaveList)
+                                var slave = SlaveList.FirstOrDefault(s => s.UnitId == _server.CurrentUnitIdentifier);
                             if (slave != null)
                                 try
                                 {
