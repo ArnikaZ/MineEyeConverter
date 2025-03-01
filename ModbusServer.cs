@@ -547,8 +547,7 @@ namespace EasyModbus
             {
                 NetworkConnectionParameter netParam = (NetworkConnectionParameter)networkConnectionParameter;
                 clientIp = ((IPEndPoint)netParam.tcpClient.Client.RemoteEndPoint).Address;
-                //Console.WriteLine($"{clientIp} clientIP");
-
+         
                 Byte[] bytes = new byte[((NetworkConnectionParameter)networkConnectionParameter).bytes.Length];
                 if (debug) StoreLogData.Instance.Store("Received Data: " + BitConverter.ToString(bytes), System.DateTime.Now);
                 NetworkStream stream = ((NetworkConnectionParameter)networkConnectionParameter).stream;

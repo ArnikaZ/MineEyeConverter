@@ -33,13 +33,14 @@ namespace MineEyeConverter
         private TcpClientAdapter _tcpClientAdapter;
 
         string xmlFilePath = null;
+        private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public LearningModeHandler(string instanceName)
         {
             _config = ConfigLoader.LoadConfiguration("config.xml");
             var instanceConfig = _config.Instances.FirstOrDefault(i => string.Equals(i.Name, instanceName, StringComparison.OrdinalIgnoreCase));
             if (instanceConfig == null)
             {
-                Console.WriteLine($"Nie znaleziono instancji '{instanceName}' w konfiguracji.");
+                _log.ErrorFormat("Instance '{0}' not found in configuration", instanceName);
             }
             string connectionType = instanceConfig.ConnectionType;
             RtuSettings rtuSettings = instanceConfig.RtuSettings;
@@ -68,7 +69,7 @@ namespace MineEyeConverter
                 serialPort.Open();
                 var transport = factory.CreateRtuTransport(_serialPortAdapter);
                 master = factory.CreateMaster(transport);
-                Console.WriteLine($" com provider {portName}");
+                _log.InfoFormat("COM provider: {0}", portName);
                
             }
             else if (connectionType.Equals("RtuOverTcp", StringComparison.OrdinalIgnoreCase))
@@ -79,15 +80,13 @@ namespace MineEyeConverter
                 tcpClient = new TcpClient(ip, port);
                 _tcpClientAdapter = new TcpClientAdapter(tcpClient);
                 master = factory.CreateRtuMaster(_tcpClientAdapter);
-                Console.WriteLine($"Tcp provider: {ip} {port}");
+                _log.InfoFormat("Tcp provider: {0} {1}", ip, port);
             }
             else
             {
-                Console.WriteLine($"Nieobsługiwany typ połączenia: {connectionType}");
+                _log.ErrorFormat("Unsupported connection type: {0}", connectionType);
             }
-            
-
-            //wczytanie urządzeń slave dla danej instancji
+  
             if (instanceConfig.SlaveDeviceList != null && instanceConfig.SlaveDeviceList.Slaves != null)
             {
                 foreach (var slaveConfig in instanceConfig.SlaveDeviceList.Slaves)
@@ -96,11 +95,11 @@ namespace MineEyeConverter
                     _slaveIds.Add(unitId);
                 }
             }
-            Console.WriteLine($"dostępne slave devices: ");
-            foreach (var slave in _slaveIds)
+            else
             {
-                Console.WriteLine($"{slave}");
+                _log.Warn("No slave devices configuration found.");
             }
+
         }
 
         public List<SlaveConfiguration> DiscoverSlaves()
@@ -147,8 +146,7 @@ namespace MineEyeConverter
                     }
                     catch (Exception ex)
                     {
-                        // Odczyt niepowodzeniem – możesz zapisać log lub pominąć
-                        Console.WriteLine($"Slave {slaveId}: brak danych holding rejestrów (może nieobsługiwane).");
+                        _log.ErrorFormat("SlaveId: {0}: no holding register data available for block starting at {1}", slaveId, start);
                     }
                 }
                
@@ -180,7 +178,7 @@ namespace MineEyeConverter
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Slave {slaveId}: brak danych input rejestrów dla bloku zaczynającego się od {start}.");
+                        _log.ErrorFormat("SlaveId: {0}: no input register data available for block starting at {1}", slaveId, start);
                     }
                 }
                 for(ushort start = 0; start < maxCoilsAddress; start += coilsBlockSize)
@@ -211,7 +209,7 @@ namespace MineEyeConverter
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Slave {slaveId}: brak danych cewek dla bloku zaczynającego się od {start}.");
+                        _log.ErrorFormat("SlaveId: {0}: no coil data available for block starting at {1}", slaveId, start);
                     }
                 }
                 
@@ -220,17 +218,10 @@ namespace MineEyeConverter
             return configs;
         }
 
-
-
-
-
-
-        // Metoda, która zapisuje zebrane konfiguracje do pliku XML w zadanym formacie
         public void SaveConfigurationToXml(List<SlaveConfiguration> configs)
         {
             XElement root = new XElement("RegisterManager");
 
-            // Łączymy wszystkie konfiguracje holding rejestrów
             var holdingElements = new XElement("HoldingRegisters",
                 from config in configs
                 from reg in config.HoldingRegisters
@@ -244,7 +235,6 @@ namespace MineEyeConverter
                 )
             );
 
-            // Podobnie dla InputRegisters
             var inputElements = new XElement("InputRegisters",
                 from config in configs
                 from reg in config.InputRegisters
@@ -258,7 +248,6 @@ namespace MineEyeConverter
                 )
             );
 
-            // I dla Coils
             var coilsElements = new XElement("Coils",
                 from config in configs
                 from reg in config.Coils
@@ -281,11 +270,11 @@ namespace MineEyeConverter
             try
             {
                 doc.Save(xmlFilePath);
-                Console.WriteLine("Konfiguracja zapisana do pliku XML: " + xmlFilePath);
+                _log.InfoFormat("Configuration saved to XML file: {0} ", xmlFilePath);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Błąd zapisu do pliku XML: " + ex.Message);
+                _log.ErrorFormat("Error in writing to file: {0}", ex.Message);
             }
         }
 

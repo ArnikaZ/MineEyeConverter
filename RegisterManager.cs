@@ -40,7 +40,6 @@ namespace MineEyeConverter
             using (StreamReader reader = new StreamReader(filePath))
             {
                 RegisterManager loaded = (RegisterManager)serializer.Deserialize(reader);
-                // Aktualizujemy właściwości bieżącej instancji
                 HoldingRegisters = loaded.HoldingRegisters;
                 InputRegisters = loaded.InputRegisters;
                 Coils = loaded.Coils;

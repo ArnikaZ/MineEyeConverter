@@ -83,9 +83,10 @@ namespace MineEyeConverter
                         BaudRate = rtuSettings.BaudRate.HasValue ? rtuSettings.BaudRate.Value : 9600,
                         PortParity = ParseParity(rtuSettings.Parity),
                         DataBits = rtuSettings.DataBits.HasValue ? rtuSettings.DataBits.Value : 8,
-                        StopBits = rtuSettings.StopBits.HasValue ? ParseStopBits(rtuSettings.StopBits.Value) : StopBits.One
+                        StopBits = rtuSettings.StopBits.HasValue ? ParseStopBits(rtuSettings.StopBits.Value) : StopBits.One   
                     }
                 };
+                _log.InfoFormat("COM provider: {0}", rtuSettings.PortName);
             }
             else if (connectionType.Equals("RtuOverTcp", StringComparison.OrdinalIgnoreCase))
             {
@@ -97,6 +98,7 @@ namespace MineEyeConverter
                         Port = rtuSettings.Port.HasValue ? rtuSettings.Port.Value : 503
                     }
                 };
+                _log.InfoFormat("Tcp provider: {0} {1}", rtuSettings.IpAddress, rtuSettings.Port);
             }
             else
             {
@@ -222,10 +224,9 @@ namespace MineEyeConverter
             if (currentCount != _previousConnectionCount)
             {
                 _previousConnectionCount = currentCount;
-                _log.InfoFormat("ZTCP client connection count changed. Current count: {0}", currentCount);
+                _log.InfoFormat("TCP client connection count changed. Current count: {0}", currentCount);
             }
         }
-
 
         public void Dispose()
         {

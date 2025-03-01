@@ -13,9 +13,6 @@ namespace MineEyeConverter
         public ushort[] InputRegisters { get; set; }
 
         public bool[] Coils { get; set; }
-     
-        
-
 
         public ModbusSlaveDevice()
         {
@@ -32,7 +29,5 @@ namespace MineEyeConverter
             Coils = new bool[65536];
         }
 
-      
-        
     }
 }
