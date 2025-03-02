@@ -718,12 +718,10 @@ namespace EasyModbus
         #endregion
         private bool IsClientAuthorized(IPAddress clientIp, int functionCode)
         {
-            // Jeśli nie używamy white list, to każdy jest autoryzowany
+            // if not using white list, every client is authorised
             if (!UseWhiteList)
                 return true;
 
-            // Określ, czy operacja jest zapisem (write) czy odczytem (read)
-            // Przyjmujemy, że operacje zapisu to: 5, 6, 15, 16 oraz funkcja 23 (zapis częściowy)
             bool requiresWrite = false;
             switch (functionCode)
             {
@@ -737,12 +735,11 @@ namespace EasyModbus
             }
 
             string clientIpStr = clientIp.ToString();
-            // Załóżmy, że klasa Client ma właściwości IpAddress i Permission
             var client = WhiteList.FirstOrDefault(c => c.IpAddress == clientIpStr);
             if (client == null)
-                return false; // klient nie znajduje się na białej liście
+                return false; // client is not on the white list
 
-            // Jeśli operacja zapisu, to klient musi mieć uprawnienie "W"
+            // if write operation, client needs "W" permission
             if (requiresWrite && !string.Equals(client.Permission, "W", StringComparison.OrdinalIgnoreCase))
                 return false;
 
@@ -754,7 +751,7 @@ namespace EasyModbus
             
             if (!IsClientAuthorized(clientIp, receiveData.functionCode))
             {
-                // Klient nie jest na białej liście lub nie ma odpowiednich uprawnień – wysyłamy odpowiedź exception
+                // if client is not on the white list or does not have permissions – sending exception message
                 sendData.errorCode = (byte)(receiveData.functionCode + 0x80);
                 sendData.exceptionCode = 0x01; 
                 sendData.length = 0x03; 
@@ -765,13 +762,13 @@ namespace EasyModbus
             
             if (OperationModeHandler is ManualModeHandler)
             {
-                //dla trybu manual jeśli rejestr nie jest zdefiniowany
+                //for manual mode if register is not defind
                 if (!IsRegisterDefined(receiveData))
                 {
                     // odpowiedź exception:
                     sendData.errorCode = (byte)(receiveData.functionCode | 0x80);
                     sendData.exceptionCode = 0x02; // Illegal Data Address
-                    sendData.length = 0x03; // typowo: UnitIdentifier, errorCode, exceptionCode
+                    sendData.length = 0x03; 
 
                     sendException(sendData.errorCode, sendData.exceptionCode, receiveData, sendData, stream, portIn, ipAddressIn);
                     return;

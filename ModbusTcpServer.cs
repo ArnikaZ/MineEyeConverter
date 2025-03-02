@@ -228,11 +228,5 @@ namespace MineEyeConverter
             }
         }
 
-        public void Dispose()
-        {
-            Stop();
-            _rtuClient.Dispose();
-            _tcpServer = null;
-        }
     }
 }
