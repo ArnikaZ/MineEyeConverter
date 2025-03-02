@@ -7,6 +7,10 @@ using System.Xml.Serialization;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    ///  Singleton class that manages the register configuration for Manual mode.
+    ///  Provides access to the lists of configured holding registers, input registers, and coils.
+    /// </summary>
     [Serializable]
     public class RegisterManager
     {

@@ -8,6 +8,9 @@ using System.Xml.Serialization;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    /// Loads a Configuration object from an XML file.
+    /// </summary>
     public static class ConfigLoader
     {
         public static Configuration LoadConfiguration(string filePath)

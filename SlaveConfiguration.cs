@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    /// Represents the configuration of a slave device discovered during learning mode.
+    /// Contains lists of discovered holding registers, input registers, and coils.
+    /// </summary>
     public class SlaveConfiguration
     {
         public byte SlaveId { get; set; }

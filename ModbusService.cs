@@ -7,10 +7,15 @@ using Topshelf;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    ///  Service class for running the Modbus converter as a Windows service.
+    ///  Handles starting and stopping the service.
+    /// </summary>
     public class ModbusService 
     {
         ModbusTcpServer server;
         private readonly string instanceName;
+        private readonly string filePath = "config.xml";
 
         public ModbusService(string instanceName)
         {
@@ -18,7 +23,7 @@ namespace MineEyeConverter
         }
         public void Start()
         {
-            Configuration _config = ConfigLoader.LoadConfiguration("config.xml");
+            Configuration _config = ConfigLoader.LoadConfiguration(filePath);
             var instanceConfig = _config.Instances.FirstOrDefault(i => string.Equals(i.Name, instanceName, StringComparison.OrdinalIgnoreCase));
             string operationMode = instanceConfig.OperationMode.ToLower();
             if (operationMode=="auto" || operationMode == "manual")

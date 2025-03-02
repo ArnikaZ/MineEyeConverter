@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    /// Provider for TCP connections when using RTU over TCP.
+    /// Contains IP address and port settings for the connection.
+    /// </summary>
     public class TcpProvider :IProvider
     {
         public string Ip { get; set; }

@@ -9,22 +9,26 @@ using System.Threading.Tasks;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    /// Implements the Manual operation mode which only allows access to registers explicitly defined in configuration.
+    /// </summary>
     public class ManualModeHandler : IOperationModeHandler
     {
         private RegisterManager registerManager;
         private HashSet<string> _reportedErrorMessages = new HashSet<string>();
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly string filePath = "registers.xml";
         public ManualModeHandler()
         {
             registerManager = RegisterManager.Instance;
-            registerManager.LoadFromFile("registers.xml");
+            registerManager.LoadFromFile(filePath);
         }
 
         public void HandleCoilsChanged(byte slaveId, int coil, int numberOfPoints, ModbusServer tcpServer, ClientHandler rtuClient, Dictionary<byte, ModbusSlaveDevice> slaveDevices)
         {
             try
             {
-                // czy rejestr jest w pliku
+                // is register defined in file
                 var manualCoil = registerManager.Coils.FirstOrDefault(r =>
                     r.SlaveId == slaveId &&
                     r.IsActive &&
@@ -32,14 +36,14 @@ namespace MineEyeConverter
 
                 if (manualCoil != null)
                 {
-                    // Pobierz wartości z serwera TCP 
+                    // fetch values from TCP server
                     bool[] values = new bool[numberOfPoints];
                     for (int i = 0; i < numberOfPoints; i++)
                     {
                         values[i] = tcpServer.coils[coil+i];
                     }
 
-                    // Jeśli warunki są spełnione przekaż dane do RTU:
+                    // if conditions are met, pass the data to the RTU
                     if (slaveDevices.ContainsKey(slaveId))
                     {
                         rtuClient.WriteMultipleCoils(slaveId, (ushort)(coil-1), values);
@@ -90,7 +94,7 @@ namespace MineEyeConverter
 
             for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity + server.LastStartingAddress); startAddress += 125)
             {
-                // Obliczenie ile rejestrów zostało do końca
+                // calculating how many registers remain till the end
                 ushort registersToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
                 try
                 {

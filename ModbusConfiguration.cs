@@ -7,6 +7,9 @@ using System.Xml.Serialization;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    /// Represents the root configuration for the application
+    /// </summary>
     [XmlRoot("Configuration")]
     public class Configuration
     {

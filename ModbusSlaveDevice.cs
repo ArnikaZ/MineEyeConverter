@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    /// Represents a Modbus slave device with its registers and coils.
+    /// </summary>
     public class ModbusSlaveDevice
     {
         public byte UnitId { get; set; }

@@ -15,14 +15,17 @@ using MineEyeConverter;
 [assembly: log4net.Config.XmlConfigurator(Watch =true)]
 namespace MineEyeConverter
 {
-   
+   /// <summary>
+   /// Entry point for the MineEyeConverter application.
+   /// Handles command-line arguments and service configuration.
+   /// </summary>
     internal class Program
     {
         private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         
         static void Main(string[] args)
         {
-            
+            // Configure application from appsettings.json and command-line arguments
             var config = new ConfigurationBuilder()
            .SetBasePath(AppContext.BaseDirectory)
            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -57,7 +60,7 @@ namespace MineEyeConverter
 
 
 
-            //z konsoli
+            //Example code for running in console mode
             //var server = new ModbusTcpServer("Przenosnik15", false);
             //server.Start();
             //Console.WriteLine("Naciśnij dowolny klawisz, aby zakończyć...");

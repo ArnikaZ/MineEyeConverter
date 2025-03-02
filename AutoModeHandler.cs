@@ -15,6 +15,10 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    /// Implements the Auto operation mode which transfers data between TCP and RTU with 1:1 mapping.
+    /// This mode allows full access to all registers without any filtering.
+    /// </summary>
     public class AutoModeHandler : IOperationModeHandler
     {
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -22,7 +26,7 @@ namespace MineEyeConverter
 
         public void HandleCoilsChanged(byte slaveId, int coil, int numberOfPoints, ModbusServer tcpServer, ClientHandler rtuClient, Dictionary<byte, ModbusSlaveDevice> slaveDevices)
         {
-            // Pobierz dane z serwera TCP
+            // Fetch data from the TCP server
             bool[] values = new bool[numberOfPoints];
             for (int i = 0; i < numberOfPoints; i++)
             {
@@ -31,7 +35,7 @@ namespace MineEyeConverter
 
             if (slaveDevices.ContainsKey(slaveId))
             {
-                // Zapisz do urządzenia RTU
+                // Save data to RTU device
                 rtuClient.WriteMultipleCoils(slaveId, (ushort)(coil-1), values);
                 _log.DebugFormat("Transferred coils change to device {0}, starting address: {1}, number of points: {2}", slaveId, coil, numberOfPoints);
             }
@@ -57,7 +61,7 @@ namespace MineEyeConverter
             
             for (ushort startAddress = server.LastStartingAddress; startAddress < (server.LastQuantity + server.LastStartingAddress); startAddress += 125)
             {
-                // Obliczenie ile rejestrów zostało do końca
+                // Calculation how many registers remain until the end
                 ushort registersToRead = (ushort)Math.Min(125, (server.LastStartingAddress + server.LastQuantity) - startAddress);
                 try
                 {

@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    /// Main server class that coordinates communication between Modbus TCP clients and RTU/Serial devices.
+    /// Manages the TCP server, RTU client, and handles data transfer between them.
+    /// </summary>
     public class ModbusTcpServer
     {
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -179,9 +183,7 @@ namespace MineEyeConverter
             _rtuClient.Stop();
             _log.Info("Server stopped");
         }
-        //Metoda jest wywoływana gdy zmienią się stany cewek w ModbusPoll
-        //coil: adres pierwszej zmienionej cewki
-        //numberOfPoints: liczba kolejnych cewek, które uległy zmianie
+        
         private void HandleCoilsChanged(byte slaveId, int coil, int numberOfPoints)
         {
             try

@@ -12,14 +12,18 @@ using System.Threading.Tasks;
 
 namespace MineEyeConverter
 {
+    /// <summary>
+    ///  Handles client-side communication with Modbus RTU devices over serial or TCP connections.
+    /// Responsible for reading from and writing to Modbus slave devices.
+    /// </summary>
     public class ClientHandler : IDisposable
     {
         private log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         
-        public bool Communicate { get; set; }
+        public bool Communicate { get; set; } //flag indicating whether communication with slave devices should continue.
         private bool _disposed;
 
-        public ICollection<ModbusSlaveDevice> SlaveList { get; set; }
+        public ICollection<ModbusSlaveDevice> SlaveList { get; set; } // collection of Modbus slave devices that this client can communicate with.
 
         private ModbusFactory factory;
 
@@ -36,7 +40,7 @@ namespace MineEyeConverter
         private IOperationModeHandler operationModeHandler;
 
         private ModbusServer _server;
-        public virtual IProvider DataProvider
+        public virtual IProvider DataProvider //Gets or sets the active data provider (TCP or Serial) used for communication.
         {
             get
             {
@@ -87,7 +91,11 @@ namespace MineEyeConverter
             isConnected = false;
             Log.Info("Communication stopped");
         }
-
+        /// <summary>
+        /// Starts communication with slave devices.
+        /// Establishes connection using the configured provider (TCP or Serial) and
+        /// continuously polls slave devices for data as long as the Communicate flag is true.
+        /// </summary>
         public void Start()
         {
             Communicate = true;
@@ -184,8 +192,8 @@ namespace MineEyeConverter
                                             }
                                             break;
                                     }
-                                    
-                                    // przerwa między odczytami kolejnego urządzenia
+
+                                    // Delay between readings of the next device
                                     Task.Delay(100).Wait();
                                 }
                                 catch (Exception slaveEx)
@@ -194,7 +202,7 @@ namespace MineEyeConverter
                                     isConnected = false;
                                     break;
                                 }
-                            // Przerwa między pełnymi cyklami odczytu
+                            // Delay between complete reading cycles.
                             Task.Delay(250).Wait();
                         }
                         catch (Exception mainEx)
