@@ -253,15 +253,13 @@ namespace MineEyeConverter
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    // Calculate how many registers to read in this request
+                    // how many registers to read in this request
                     ushort registersToRead = (ushort)Math.Min(maxRegistersPerRequest, (startAddress + totalRegisters) - address);
 
                     try
                     {
-                        // Read the registers
                         var data = _master.ReadHoldingRegisters(device.UnitId, address, registersToRead);
 
-                        // Update the device's holding registers
                         Array.Copy(data, 0, device.HoldingRegisters, address, registersToRead);
 
                         _log.DebugFormat("Polled holding registers for device {0}, starting at {1}, count {2}",
