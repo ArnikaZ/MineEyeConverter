@@ -21,11 +21,11 @@ namespace MineEyeConverter
    /// </summary>
     internal class Program
     {
-        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        
         
         static void Main(string[] args)
         {
-            // Configure application from appsettings.json and command-line arguments
+           // Configure application from appsettings.json and command - line arguments
             var config = new ConfigurationBuilder()
            .SetBasePath(AppContext.BaseDirectory)
            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -55,8 +55,8 @@ namespace MineEyeConverter
             });
 
 
-            int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
-            Environment.ExitCode = exitCodeValue;
+            // int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
+            // Environment.ExitCode = exitCodeValue;
 
 
 
@@ -72,6 +72,37 @@ namespace MineEyeConverter
             //lm.SaveConfigurationToXml(discoveredConfigs);
             //Console.ReadKey();
 
+            //var client = new ModbusClient("127.0.0.1", 502, 1000);
+            //client.AddSlaveDevice(1);
+            //client.AddSlaveDevice(2);
+            //client.AddSlaveDevice(3);
+            //try
+            //{
+            //    Console.WriteLine("Starting UGS communication...");
+            //    client.Start();
+                
+            //    Thread.Sleep(3000);//time to perform initial polling
+
+            //    foreach (var device in client.SlaveDevices.Values)
+            //    {
+            //        Console.WriteLine($"Device ID: {device.UnitId}");
+            //        Console.WriteLine("Holding Registers (0-19):");
+            //        for (int i = 0; i < 20; i++)
+            //        {
+            //            Console.Write($"{device.HoldingRegisters[i]} ");
+            //            if ((i + 1) % 5 == 0) Console.WriteLine();
+            //        }
+            //        Console.WriteLine();
+            //    }
+
+            //    Console.ReadKey();
+            //}
+            //finally
+            //{
+            //    // Clean up
+            //    client.Stop();
+            //    client.Dispose();
+            //}
 
         }
 
