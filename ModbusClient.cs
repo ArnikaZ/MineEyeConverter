@@ -253,7 +253,7 @@ namespace MineEyeConverter
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    // Calculate how many registers to read in this request
+                    // how many registers to read in this request
                     ushort registersToRead = (ushort)Math.Min(maxRegistersPerRequest, (startAddress + totalRegisters) - address);
 
                     try
