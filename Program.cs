@@ -24,38 +24,38 @@ namespace MineEyeConverter
 
         static void Main(string[] args)
         {
-            //   // Configure application from appsettings.json and command - line arguments
-            //    var config = new ConfigurationBuilder()
-            //   .SetBasePath(AppContext.BaseDirectory)
-            //   .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            //   .AddCommandLine(args)
-            //   .Build();
+            // Configure application from appsettings.json and command - line arguments
+            var config = new ConfigurationBuilder()
+           .SetBasePath(AppContext.BaseDirectory)
+           .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+           .AddCommandLine(args)
+           .Build();
 
 
-            //    var instanceName = config["Service:Name"] ?? config["name"];
-            //    var serviceDescription = config["Service:Description"] ?? "TCP <=> RTU Converter";
+            var instanceName = config["Service:Name"] ?? config["name"];
+            var serviceDescription = config["Service:Description"] ?? "TCP <=> RTU Converter";
 
-            //    var exitCode = HostFactory.Run(x =>
-            //    {
-            //        x.AddCommandLineDefinition("name", f => { instanceName = f; });
-            //        x.ApplyCommandLine();
-            //        x.Service<ModbusService>(s =>
-            //        {
-            //            s.ConstructUsing(modbusService => new ModbusService(instanceName));
-            //            s.WhenStarted(modbusService => modbusService.Start());
-            //            s.WhenStopped(modbusService => modbusService.Stop());
-            //        });
+            var exitCode = HostFactory.Run(x =>
+            {
+                x.AddCommandLineDefinition("name", f => { instanceName = f; });
+                x.ApplyCommandLine();
+                x.Service<ModbusService>(s =>
+                {
+                    s.ConstructUsing(modbusService => new ModbusService(instanceName));
+                    s.WhenStarted(modbusService => modbusService.Start());
+                    s.WhenStopped(modbusService => modbusService.Stop());
+                });
 
-            //        x.RunAsLocalSystem();
-            //        x.SetServiceName(instanceName);
-            //        x.SetDisplayName(instanceName);
-            //        x.SetDescription(serviceDescription);
-            //        x.StartAutomatically();
-            //    });
+                x.RunAsLocalSystem();
+                x.SetServiceName(instanceName);
+                x.SetDisplayName(instanceName);
+                x.SetDescription(serviceDescription);
+                x.StartAutomatically();
+            });
 
 
-            // int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
-            // Environment.ExitCode = exitCodeValue;
+            int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
+            Environment.ExitCode = exitCodeValue;
 
 
 
@@ -71,23 +71,23 @@ namespace MineEyeConverter
             //lm.SaveConfigurationToXml(discoveredConfigs);
             //Console.ReadKey();
 
-            var client = new ModbusClient("127.0.0.1", 502, 1000);
-            client.AddSlaveDevice(1);
-            client.AddSlaveDevice(2);
-            client.AddSlaveDevice(3);
-            try
-            {
-                Console.WriteLine("Starting UGS communication...");
-                client.Start();
+            //var client = new ModbusClient("127.0.0.1", 502, 1000);
+            //client.AddSlaveDevice(1);
+            //client.AddSlaveDevice(2);
+            //client.AddSlaveDevice(3);
+            //try
+            //{
+            //    Console.WriteLine("Starting UGS communication...");
+            //    client.Start();
 
-                Thread.Sleep(3000);
-                Console.ReadKey();
-            }
-            finally
-            {
-                client.Stop();
-                client.Dispose();
-            }
+            //    Thread.Sleep(3000);
+            //    Console.ReadKey();
+            //}
+            //finally
+            //{
+            //    client.Stop();
+            //    client.Dispose();
+            //}
 
         }
 
