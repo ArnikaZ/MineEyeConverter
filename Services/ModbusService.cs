@@ -23,7 +23,9 @@ namespace MineEyeConverter
         }
         public void Start()
         {
-            Configuration _config = ConfigLoader.LoadConfiguration(filePath);
+            string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string configFilePath = Path.Combine(appDirectory, "config.xml");
+            Configuration _config = ConfigLoader.LoadConfiguration(configFilePath);
             var instanceConfig = _config.Instances.FirstOrDefault(i => string.Equals(i.Name, instanceName, StringComparison.OrdinalIgnoreCase));
             string operationMode = instanceConfig.OperationMode.ToLower();
             if (operationMode=="auto" || operationMode == "manual")
